@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriSense Pro: Precision Irrigation DSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 border-b border-slate-800 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-extrabold text-emerald-400">🌿 AgriSense Pro: Precision Irrigation DSS</h1>
+                <p class="text-slate-400 mt-1">High-Frequency Engine | Smart Stage Tracking | Auto-Fill Sensor DB</p>
+            </div>
+            <div class="flex gap-3">
+                <button id="btn_simulate" onclick="runFullSimulation()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-4 rounded-full shadow transition border border-indigo-400">
+                    🚀 Auto-Simulate Full Experiment (Mar 21 - May 13)
+                </button>
+                <div id="sync_status" class="text-xs bg-slate-800 border border-slate-700 px-3 py-2 rounded-full text-slate-400 flex items-center">
+                    🟢 Ready
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <!-- STEP-BY-STEP INPUT FORM -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl space-y-5 xl:col-span-1">
+                
+                <!-- STEP 1 & 2: GENERAL SETUP -->
+                <div class="space-y-4 border-b border-slate-700 pb-4">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Step 1 & 2: General Setup</h2>
+                        <button id="btn_weather" onclick="fetchWeather()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1 px-2 rounded shadow transition">
+                            🌤️ Auto-Fetch Weather
+                        </button>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300">Observation Date</label>
+                        <input type="date" id="obs_date" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300">Target Crop</label>
+                        <select id="crop" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                            <option value="LETTUCE">Lettuce (0.5m² plot)</option>
+                            <option value="RED_RADISH">Red Radish (0.5m² plot)</option>
+                            <option value="BROCCOLI">Broccoli (0.5m² plot)</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">DAS (Days After Sowing)</label>
+                            <input type="number" id="das" value="1" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">ET0 (mm)</label>
+                            <input type="number" step="0.1" id="et0" value="1.3" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                    </div>
+                    
+                    <!-- DYNAMIC CROP STATUS PANEL -->
+                    <div id="crop_status_panel" class="bg-emerald-900/20 border border-emerald-800/50 p-3 rounded-lg text-sm text-emerald-200 mt-2">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold">Plant Phenology Tracker</span>
+                        </div>
+                        <p class="text-xs text-emerald-300/80 mb-1">Effective Age: <span id="ui_eff_age" class="font-bold text-white"></span> Days <span id="ui_eff_age_label" class="text-[10px] text-emerald-400/60"></span></p>
+                        <p class="text-xs text-emerald-300/80 mb-1">Current Stage: <span id="ui_growth_stage" class="font-bold text-white uppercase"></span></p>
+                        <p class="text-xs text-emerald-300/80 mb-1">Crop Coefficient (Kc): <span id="ui_kc_val" class="font-bold text-white"></span></p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Target Date Rain (mm)</label>
+                            <input type="number" step="0.1" id="rain_fcst" value="0.0" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Yest. Rain (mm)</label>
+                            <input type="number" step="0.1" id="rain_yest" value="0.0" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: TREATMENT SELECTION -->
+                <div class="space-y-3 border-b border-slate-700 pb-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Step 3: Select Treatment</h2>
+                    <select id="treatment_select" onchange="toggleTreatmentInputs()" class="w-full bg-slate-900 border border-emerald-500 rounded-lg p-2.5 text-emerald-300 font-bold text-sm">
+                        <option value="T1">Treatment 1: FAO-56 Mass Balance</option>
+                        <option value="T2">Treatment 2: Soil Sensor Only</option>
+                        <option value="T3">Treatment 3: Dynamic Canopy Delta</option>
+                        <option value="T4">Treatment 4: Integrated DSS Approach</option>
+                    </select>
+                </div>
+
+                <!-- STEP 4: DYNAMIC PARAMETERS -->
+                <div class="space-y-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Step 4: Treatment Parameters</h2>
+                    
+                    <!-- T1 Parameters -->
+                    <div id="params_t1" class="treatment-params space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Current T1 Depletion (mm) <span class="text-emerald-400 font-bold ml-1">Auto-Updates per Crop</span></label>
+                            <input type="number" step="0.1" id="prev_t1_dep" value="0.0" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm shadow-[0_0_8px_rgba(16,185,129,0.3)]">
+                        </div>
+                    </div>
+
+                    <!-- T2 Parameters -->
+                    <div id="params_t2" class="treatment-params space-y-3 hidden">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">T2 Soil Sensor VWC (Threshold: 0.40)</label>
+                            <input type="number" step="0.01" id="t2_vwc" value="0.38" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                    </div>
+
+                    <!-- T3 Parameters -->
+                    <div id="params_t3" class="treatment-params space-y-3 hidden">
+                        <div class="bg-slate-900/50 p-2.5 rounded border border-slate-700 text-xs text-slate-300 flex justify-between items-center">
+                            <span>📷 Evaluates canopy drop. <span class="text-emerald-400 font-bold">Auto-Fills from DB.</span></span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-amber-400">Baseline Canopy Index (Current Stage Max)</label>
+                            <input type="number" step="0.01" id="baseline_t3" value="0.55" class="mt-1 w-full bg-slate-900 border border-amber-600 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Today's RGN Camera Index (MSAVI)</label>
+                            <input type="number" step="0.01" id="msavi_t3" value="0.48" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Today's OCN Camera Index (ONVI)</label>
+                            <input type="number" step="0.01" id="onvi_t3" value="0.49" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                    </div>
+
+                    <!-- T4 Parameters -->
+                    <div id="params_t4" class="treatment-params space-y-3 hidden">
+                        <div class="bg-slate-900/50 p-2.5 rounded border border-slate-700 text-xs text-slate-300">
+                            ℹ️ Integrated DSS. <span class="text-emerald-400 font-bold">Canopy Auto-Fills from DB.</span>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">T2 Soil Sensor VWC (Threshold: 0.40)</label>
+                            <input type="number" step="0.01" id="t2_vwc_t4" value="0.38" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div class="pt-2 border-t border-slate-700">
+                            <label class="block text-xs font-medium text-amber-400">Baseline Canopy Index (Current Stage Max)</label>
+                            <input type="number" step="0.01" id="baseline_t4" value="0.55" class="mt-1 w-full bg-slate-900 border border-amber-600 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Today's RGN Camera Index (MSAVI)</label>
+                            <input type="number" step="0.01" id="msavi_t4" value="0.48" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300">Today's OCN Camera Index (ONVI)</label>
+                            <input type="number" step="0.01" id="onvi_t4" value="0.49" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calculateSelectedTreatment(true)" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 text-sm mt-4">
+                    ✅ Run Single Calculation & Save Record
+                </button>
+            </div>
+
+            <!-- OUTPUT RESULTS & LOGS -->
+            <div class="xl:col-span-2 space-y-6">
+                <div id="results_card" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl hidden">
+                    <h2 class="text-xl font-bold text-emerald-300 border-b border-slate-700 pb-2 mb-4">📝 Active Treatment Output</h2>
+                    <div id="output_content" class="space-y-4 text-slate-200 text-sm"></div>
+                </div>
+
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-700 pb-2 gap-4">
+                        <h2 class="text-xl font-bold text-emerald-300">🗄️ Experiment Database Log</h2>
+                        <button onclick="downloadCSV()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded shadow transition flex-shrink-0">
+                            📥 Download FULL Dataset (CSV)
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-3">Showing summary view. Download CSV for full 22-column dataset (TAW, RAW, Depletions, Indices).</p>
+                    <div class="overflow-x-auto max-h-96">
+                        <table id="log_table" class="w-full text-left text-xs text-slate-300">
+                            <thead class="bg-slate-900 text-slate-400 uppercase sticky top-0">
+                                <tr>
+                                    <th class="p-2 whitespace-nowrap">Date</th>
+                                    <th class="p-2">Crop</th>
+                                    <th class="p-2">Stage</th>
+                                    <th class="p-2">Treat</th>
+                                    <th class="p-2">Input Check</th>
+                                    <th class="p-2 whitespace-nowrap">Result</th>
+                                    <th class="p-2">Reason Log</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log_tbody" class="divide-y divide-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // PASTE YOUR GOOGLE APPS SCRIPT URL HERE
+        const WEB_APP_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+        let logData = [];
+        
+        let t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
+
+        // ------------------ EMBEDDED DATABASES ------------------
+        const SENSOR_DATABASE = {"2026-03-21":{"RED_RADISH":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.117,"MSAVI":0.092},"T4":{"ONVI":0.131,"MSAVI":0.114}},"LETTUCE":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.106,"MSAVI":0.088},"T4":{"ONVI":0.109,"MSAVI":0.094}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.103,"MSAVI":0.08},"T4":{"ONVI":0.113,"MSAVI":0.099}}},"2026-03-22":{"RED_RADISH":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.12,"MSAVI":0.102},"T4":{"ONVI":0.133,"MSAVI":0.114}},"LETTUCE":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.104,"MSAVI":0.086},"T4":{"ONVI":0.116,"MSAVI":0.097}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.103,"MSAVI":0.081},"T4":{"ONVI":0.115,"MSAVI":0.099}}},"2026-03-23":{"RED_RADISH":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.127,"MSAVI":0.108},"T4":{"ONVI":0.14,"MSAVI":0.118}},"LETTUCE":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.102,"MSAVI":0.083},"T4":{"ONVI":0.121,"MSAVI":0.099}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.102,"MSAVI":0.083},"T4":{"ONVI":0.119,"MSAVI":0.097}}},"2026-03-24":{"RED_RADISH":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.134,"MSAVI":0.114},"T4":{"ONVI":0.149,"MSAVI":0.125}},"LETTUCE":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.104,"MSAVI":0.081},"T4":{"ONVI":0.121,"MSAVI":0.099}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.098,"MSAVI":0.084},"T4":{"ONVI":0.122,"MSAVI":0.096}}},"2026-03-25":{"RED_RADISH":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.144,"MSAVI":0.123},"T4":{"ONVI":0.161,"MSAVI":0.135}},"LETTUCE":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.104,"MSAVI":0.083},"T4":{"ONVI":0.123,"MSAVI":0.098}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.099,"MSAVI":0.087},"T4":{"ONVI":0.124,"MSAVI":0.096}}},"2026-03-26":{"RED_RADISH":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.156,"MSAVI":0.132},"T4":{"ONVI":0.17,"MSAVI":0.146}},"LETTUCE":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.108,"MSAVI":0.086},"T4":{"ONVI":0.122,"MSAVI":0.098}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.1,"MSAVI":0.085},"T4":{"ONVI":0.125,"MSAVI":0.097}}},"2026-03-27":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.714,"T3":{"ONVI":0.174,"MSAVI":0.147},"T4":{"ONVI":0.182,"MSAVI":0.159}},"LETTUCE":{"stage":"ROSETTE","kc":0.721,"T3":{"ONVI":0.107,"MSAVI":0.09},"T4":{"ONVI":0.124,"MSAVI":0.101}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.102,"MSAVI":0.086},"T4":{"ONVI":0.123,"MSAVI":0.097}}},"2026-03-28":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.727,"T3":{"ONVI":0.193,"MSAVI":0.16},"T4":{"ONVI":0.201,"MSAVI":0.176}},"LETTUCE":{"stage":"ROSETTE","kc":0.743,"T3":{"ONVI":0.107,"MSAVI":0.09},"T4":{"ONVI":0.127,"MSAVI":0.102}},"BROCCOLI":{"stage":"EMERGENCE","kc":0.7,"T3":{"ONVI":0.104,"MSAVI":0.086},"T4":{"ONVI":0.122,"MSAVI":0.095}}},"2026-03-29":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.741,"T3":{"ONVI":0.213,"MSAVI":0.181},"T4":{"ONVI":0.222,"MSAVI":0.194}},"LETTUCE":{"stage":"ROSETTE","kc":0.764,"T3":{"ONVI":0.108,"MSAVI":0.091},"T4":{"ONVI":0.125,"MSAVI":0.105}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.711,"T3":{"ONVI":0.107,"MSAVI":0.089},"T4":{"ONVI":0.12,"MSAVI":0.092}}},"2026-03-30":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.755,"T3":{"ONVI":0.233,"MSAVI":0.202},"T4":{"ONVI":0.245,"MSAVI":0.216}},"LETTUCE":{"stage":"ROSETTE","kc":0.786,"T3":{"ONVI":0.111,"MSAVI":0.09},"T4":{"ONVI":0.12,"MSAVI":0.101}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.722,"T3":{"ONVI":0.105,"MSAVI":0.086},"T4":{"ONVI":0.119,"MSAVI":0.094}}},"2026-03-31":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.768,"T3":{"ONVI":0.258,"MSAVI":0.229},"T4":{"ONVI":0.271,"MSAVI":0.242}},"LETTUCE":{"stage":"ROSETTE","kc":0.807,"T3":{"ONVI":0.112,"MSAVI":0.091},"T4":{"ONVI":0.117,"MSAVI":0.101}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.733,"T3":{"ONVI":0.101,"MSAVI":0.084},"T4":{"ONVI":0.118,"MSAVI":0.091}}},"2026-04-01":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.782,"T3":{"ONVI":0.287,"MSAVI":0.26},"T4":{"ONVI":0.307,"MSAVI":0.269}},"LETTUCE":{"stage":"ROSETTE","kc":0.829,"T3":{"ONVI":0.112,"MSAVI":0.093},"T4":{"ONVI":0.122,"MSAVI":0.097}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.744,"T3":{"ONVI":0.101,"MSAVI":0.083},"T4":{"ONVI":0.117,"MSAVI":0.092}}},"2026-04-02":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.795,"T3":{"ONVI":0.327,"MSAVI":0.296},"T4":{"ONVI":0.347,"MSAVI":0.303}},"LETTUCE":{"stage":"ROSETTE","kc":0.85,"T3":{"ONVI":0.114,"MSAVI":0.092},"T4":{"ONVI":0.129,"MSAVI":0.101}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.755,"T3":{"ONVI":0.098,"MSAVI":0.083},"T4":{"ONVI":0.114,"MSAVI":0.088}}},"2026-04-03":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.809,"T3":{"ONVI":0.371,"MSAVI":0.331},"T4":{"ONVI":0.389,"MSAVI":0.339}},"LETTUCE":{"stage":"ROSETTE","kc":0.871,"T3":{"ONVI":0.118,"MSAVI":0.093},"T4":{"ONVI":0.133,"MSAVI":0.106}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.766,"T3":{"ONVI":0.098,"MSAVI":0.082},"T4":{"ONVI":0.113,"MSAVI":0.088}}},"2026-04-04":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.823,"T3":{"ONVI":0.418,"MSAVI":0.372},"T4":{"ONVI":0.431,"MSAVI":0.38}},"LETTUCE":{"stage":"ROSETTE","kc":0.893,"T3":{"ONVI":0.121,"MSAVI":0.098},"T4":{"ONVI":0.136,"MSAVI":0.11}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.777,"T3":{"ONVI":0.096,"MSAVI":0.081},"T4":{"ONVI":0.114,"MSAVI":0.089}}},"2026-04-05":{"RED_RADISH":{"stage":"LEAF DEVELOPMENT","kc":0.836,"T3":{"ONVI":0.465,"MSAVI":0.412},"T4":{"ONVI":0.478,"MSAVI":0.422}},"LETTUCE":{"stage":"ROSETTE","kc":0.914,"T3":{"ONVI":0.128,"MSAVI":0.105},"T4":{"ONVI":0.14,"MSAVI":0.116}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.787,"T3":{"ONVI":0.097,"MSAVI":0.081},"T4":{"ONVI":0.118,"MSAVI":0.094}}},"2026-04-06":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.85,"T3":{"ONVI":0.514,"MSAVI":0.457},"T4":{"ONVI":0.526,"MSAVI":0.469}},"LETTUCE":{"stage":"ROSETTE","kc":0.936,"T3":{"ONVI":0.135,"MSAVI":0.116},"T4":{"ONVI":0.153,"MSAVI":0.124}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.798,"T3":{"ONVI":0.1,"MSAVI":0.081},"T4":{"ONVI":0.118,"MSAVI":0.098}}},"2026-04-07":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.864,"T3":{"ONVI":0.563,"MSAVI":0.497},"T4":{"ONVI":0.573,"MSAVI":0.512}},"LETTUCE":{"stage":"ROSETTE","kc":0.957,"T3":{"ONVI":0.15,"MSAVI":0.123},"T4":{"ONVI":0.169,"MSAVI":0.138}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.809,"T3":{"ONVI":0.1,"MSAVI":0.081},"T4":{"ONVI":0.119,"MSAVI":0.1}}},"2026-04-08":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.877,"T3":{"ONVI":0.61,"MSAVI":0.54},"T4":{"ONVI":0.616,"MSAVI":0.556}},"LETTUCE":{"stage":"ROSETTE","kc":0.979,"T3":{"ONVI":0.162,"MSAVI":0.141},"T4":{"ONVI":0.185,"MSAVI":0.156}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.82,"T3":{"ONVI":0.107,"MSAVI":0.086},"T4":{"ONVI":0.123,"MSAVI":0.103}}},"2026-04-09":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.891,"T3":{"ONVI":0.647,"MSAVI":0.581},"T4":{"ONVI":0.655,"MSAVI":0.596}},"LETTUCE":{"stage":"ROSETTE","kc":1.0,"T3":{"ONVI":0.186,"MSAVI":0.16},"T4":{"ONVI":0.205,"MSAVI":0.174}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.831,"T3":{"ONVI":0.112,"MSAVI":0.092},"T4":{"ONVI":0.127,"MSAVI":0.104}}},"2026-04-10":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.905,"T3":{"ONVI":0.684,"MSAVI":0.619},"T4":{"ONVI":0.692,"MSAVI":0.633}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.211,"MSAVI":0.187},"T4":{"ONVI":0.227,"MSAVI":0.195}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.842,"T3":{"ONVI":0.122,"MSAVI":0.102},"T4":{"ONVI":0.136,"MSAVI":0.11}}},"2026-04-11":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.918,"T3":{"ONVI":0.713,"MSAVI":0.647},"T4":{"ONVI":0.723,"MSAVI":0.659}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.239,"MSAVI":0.215},"T4":{"ONVI":0.257,"MSAVI":0.217}},"BROCCOLI":{"stage":"VEGETATIVE","kc":0.853,"T3":{"ONVI":0.129,"MSAVI":0.106},"T4":{"ONVI":0.145,"MSAVI":0.116}}},"2026-04-12":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.932,"T3":{"ONVI":0.74,"MSAVI":0.672},"T4":{"ONVI":0.75,"MSAVI":0.681}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.272,"MSAVI":0.246},"T4":{"ONVI":0.287,"MSAVI":0.25}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.864,"T3":{"ONVI":0.138,"MSAVI":0.115},"T4":{"ONVI":0.155,"MSAVI":0.124}}},"2026-04-13":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.945,"T3":{"ONVI":0.761,"MSAVI":0.689},"T4":{"ONVI":0.776,"MSAVI":0.699}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.31,"MSAVI":0.282},"T4":{"ONVI":0.324,"MSAVI":0.288}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.875,"T3":{"ONVI":0.148,"MSAVI":0.124},"T4":{"ONVI":0.163,"MSAVI":0.137}}},"2026-04-14":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.959,"T3":{"ONVI":0.78,"MSAVI":0.707},"T4":{"ONVI":0.796,"MSAVI":0.716}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.355,"MSAVI":0.322},"T4":{"ONVI":0.367,"MSAVI":0.332}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.886,"T3":{"ONVI":0.16,"MSAVI":0.137},"T4":{"ONVI":0.171,"MSAVI":0.152}}},"2026-04-15":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.973,"T3":{"ONVI":0.796,"MSAVI":0.719},"T4":{"ONVI":0.813,"MSAVI":0.729}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.401,"MSAVI":0.363},"T4":{"ONVI":0.418,"MSAVI":0.375}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.897,"T3":{"ONVI":0.175,"MSAVI":0.15},"T4":{"ONVI":0.186,"MSAVI":0.171}}},"2026-04-16":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":0.986,"T3":{"ONVI":0.807,"MSAVI":0.73},"T4":{"ONVI":0.821,"MSAVI":0.74}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.449,"MSAVI":0.405},"T4":{"ONVI":0.469,"MSAVI":0.421}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.908,"T3":{"ONVI":0.191,"MSAVI":0.17},"T4":{"ONVI":0.208,"MSAVI":0.185}}},"2026-04-17":{"RED_RADISH":{"stage":"RAPID VEGETATIVE","kc":1.0,"T3":{"ONVI":0.815,"MSAVI":0.737},"T4":{"ONVI":0.827,"MSAVI":0.744}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.499,"MSAVI":0.452},"T4":{"ONVI":0.517,"MSAVI":0.467}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.919,"T3":{"ONVI":0.217,"MSAVI":0.189},"T4":{"ONVI":0.232,"MSAVI":0.206}}},"2026-04-18":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.816,"MSAVI":0.737},"T4":{"ONVI":0.83,"MSAVI":0.747}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.55,"MSAVI":0.501},"T4":{"ONVI":0.565,"MSAVI":0.513}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.93,"T3":{"ONVI":0.245,"MSAVI":0.217},"T4":{"ONVI":0.259,"MSAVI":0.23}}},"2026-04-19":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.814,"MSAVI":0.734},"T4":{"ONVI":0.828,"MSAVI":0.746}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.596,"MSAVI":0.548},"T4":{"ONVI":0.615,"MSAVI":0.561}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.941,"T3":{"ONVI":0.279,"MSAVI":0.242},"T4":{"ONVI":0.29,"MSAVI":0.26}}},"2026-04-20":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.807,"MSAVI":0.726},"T4":{"ONVI":0.828,"MSAVI":0.743}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.642,"MSAVI":0.586},"T4":{"ONVI":0.663,"MSAVI":0.602}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.952,"T3":{"ONVI":0.316,"MSAVI":0.279},"T4":{"ONVI":0.33,"MSAVI":0.295}}},"2026-04-21":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.804,"MSAVI":0.72},"T4":{"ONVI":0.82,"MSAVI":0.736}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.682,"MSAVI":0.625},"T4":{"ONVI":0.701,"MSAVI":0.638}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.962,"T3":{"ONVI":0.355,"MSAVI":0.316},"T4":{"ONVI":0.371,"MSAVI":0.333}}},"2026-04-22":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.798,"MSAVI":0.715},"T4":{"ONVI":0.815,"MSAVI":0.731}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.721,"MSAVI":0.659},"T4":{"ONVI":0.733,"MSAVI":0.671}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.973,"T3":{"ONVI":0.4,"MSAVI":0.362},"T4":{"ONVI":0.414,"MSAVI":0.38}}},"2026-04-23":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.795,"MSAVI":0.71},"T4":{"ONVI":0.81,"MSAVI":0.726}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.752,"MSAVI":0.686},"T4":{"ONVI":0.759,"MSAVI":0.699}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.984,"T3":{"ONVI":0.444,"MSAVI":0.408},"T4":{"ONVI":0.459,"MSAVI":0.424}}},"2026-04-24":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.788,"MSAVI":0.709},"T4":{"ONVI":0.804,"MSAVI":0.723}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.779,"MSAVI":0.711},"T4":{"ONVI":0.788,"MSAVI":0.727}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":0.995,"T3":{"ONVI":0.494,"MSAVI":0.458},"T4":{"ONVI":0.511,"MSAVI":0.475}}},"2026-04-25":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.78,"MSAVI":0.705},"T4":{"ONVI":0.797,"MSAVI":0.716}},"LETTUCE":{"stage":"HEAD FORMATION","kc":1.0,"T3":{"ONVI":0.8,"MSAVI":0.732},"T4":{"ONVI":0.811,"MSAVI":0.745}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":1.006,"T3":{"ONVI":0.547,"MSAVI":0.508},"T4":{"ONVI":0.564,"MSAVI":0.522}}},"2026-04-26":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.772,"MSAVI":0.703},"T4":{"ONVI":0.787,"MSAVI":0.716}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.818,"MSAVI":0.751},"T4":{"ONVI":0.833,"MSAVI":0.762}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":1.017,"T3":{"ONVI":0.602,"MSAVI":0.559},"T4":{"ONVI":0.619,"MSAVI":0.572}}},"2026-04-27":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.767,"MSAVI":0.7},"T4":{"ONVI":0.785,"MSAVI":0.714}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.829,"MSAVI":0.763},"T4":{"ONVI":0.849,"MSAVI":0.773}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":1.028,"T3":{"ONVI":0.65,"MSAVI":0.604},"T4":{"ONVI":0.67,"MSAVI":0.616}}},"2026-04-28":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.763,"MSAVI":0.695},"T4":{"ONVI":0.779,"MSAVI":0.714}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.843,"MSAVI":0.774},"T4":{"ONVI":0.862,"MSAVI":0.785}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":1.039,"T3":{"ONVI":0.696,"MSAVI":0.646},"T4":{"ONVI":0.714,"MSAVI":0.659}}},"2026-04-29":{"RED_RADISH":{"stage":"ROOT ENLARGEMENT","kc":1.0,"T3":{"ONVI":0.758,"MSAVI":0.694},"T4":{"ONVI":0.776,"MSAVI":0.707}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.852,"MSAVI":0.783},"T4":{"ONVI":0.866,"MSAVI":0.793}},"BROCCOLI":{"stage":"CANOPY EXPANSION","kc":1.05,"T3":{"ONVI":0.734,"MSAVI":0.68},"T4":{"ONVI":0.75,"MSAVI":0.698}}},"2026-04-30":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.754,"MSAVI":0.69},"T4":{"ONVI":0.772,"MSAVI":0.703}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.854,"MSAVI":0.785},"T4":{"ONVI":0.866,"MSAVI":0.796}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.772,"MSAVI":0.715},"T4":{"ONVI":0.783,"MSAVI":0.734}}},"2026-05-01":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.751,"MSAVI":0.687},"T4":{"ONVI":0.773,"MSAVI":0.697}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.85,"MSAVI":0.779},"T4":{"ONVI":0.865,"MSAVI":0.793}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.803,"MSAVI":0.742},"T4":{"ONVI":0.812,"MSAVI":0.761}}},"2026-05-02":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.747,"MSAVI":0.68},"T4":{"ONVI":0.767,"MSAVI":0.692}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.84,"MSAVI":0.772},"T4":{"ONVI":0.86,"MSAVI":0.791}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.827,"MSAVI":0.765},"T4":{"ONVI":0.841,"MSAVI":0.784}}},"2026-05-03":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.743,"MSAVI":0.671},"T4":{"ONVI":0.76,"MSAVI":0.684}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.835,"MSAVI":0.768},"T4":{"ONVI":0.851,"MSAVI":0.783}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.845,"MSAVI":0.782},"T4":{"ONVI":0.863,"MSAVI":0.801}}},"2026-05-04":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.741,"MSAVI":0.67},"T4":{"ONVI":0.752,"MSAVI":0.682}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.825,"MSAVI":0.764},"T4":{"ONVI":0.843,"MSAVI":0.779}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.86,"MSAVI":0.8},"T4":{"ONVI":0.877,"MSAVI":0.82}}},"2026-05-05":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.738,"MSAVI":0.668},"T4":{"ONVI":0.747,"MSAVI":0.676}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.816,"MSAVI":0.758},"T4":{"ONVI":0.836,"MSAVI":0.768}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.874,"MSAVI":0.813},"T4":{"ONVI":0.89,"MSAVI":0.832}}},"2026-05-06":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.732,"MSAVI":0.665},"T4":{"ONVI":0.742,"MSAVI":0.67}},"LETTUCE":{"stage":"MATURITY","kc":1.0,"T3":{"ONVI":0.805,"MSAVI":0.75},"T4":{"ONVI":0.829,"MSAVI":0.758}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.879,"MSAVI":0.819},"T4":{"ONVI":0.889,"MSAVI":0.833}}},"2026-05-07":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.719,"MSAVI":0.65},"T4":{"ONVI":0.732,"MSAVI":0.657}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.993,"T3":{"ONVI":0.79,"MSAVI":0.732},"T4":{"ONVI":0.813,"MSAVI":0.74}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.867,"MSAVI":0.808},"T4":{"ONVI":0.881,"MSAVI":0.818}}},"2026-05-08":{"RED_RADISH":{"stage":"LATE MATURITY","kc":1.0,"T3":{"ONVI":0.696,"MSAVI":0.631},"T4":{"ONVI":0.715,"MSAVI":0.642}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.986,"T3":{"ONVI":0.77,"MSAVI":0.712},"T4":{"ONVI":0.791,"MSAVI":0.721}},"BROCCOLI":{"stage":"HEAD DEVELOPMENT","kc":1.05,"T3":{"ONVI":0.841,"MSAVI":0.787},"T4":{"ONVI":0.855,"MSAVI":0.796}}},"2026-05-09":{"RED_RADISH":{"stage":"PRE-HARVEST SENESCENCE","kc":0.99,"T3":{"ONVI":0.671,"MSAVI":0.606},"T4":{"ONVI":0.686,"MSAVI":0.618}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.979,"T3":{"ONVI":0.746,"MSAVI":0.683},"T4":{"ONVI":0.759,"MSAVI":0.701}},"BROCCOLI":{"stage":"LEAF SENESCENCE","kc":1.03,"T3":{"ONVI":0.807,"MSAVI":0.759},"T4":{"ONVI":0.825,"MSAVI":0.766}}},"2026-05-10":{"RED_RADISH":{"stage":"PRE-HARVEST SENESCENCE","kc":0.98,"T3":{"ONVI":0.643,"MSAVI":0.586},"T4":{"ONVI":0.657,"MSAVI":0.594}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.971,"T3":{"ONVI":0.716,"MSAVI":0.659},"T4":{"ONVI":0.733,"MSAVI":0.678}},"BROCCOLI":{"stage":"LEAF SENESCENCE","kc":1.01,"T3":{"ONVI":0.776,"MSAVI":0.73},"T4":{"ONVI":0.793,"MSAVI":0.74}}},"2026-05-11":{"RED_RADISH":{"stage":"PRE-HARVEST SENESCENCE","kc":0.97,"T3":{"ONVI":0.615,"MSAVI":0.56},"T4":{"ONVI":0.626,"MSAVI":0.568}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.964,"T3":{"ONVI":0.688,"MSAVI":0.631},"T4":{"ONVI":0.702,"MSAVI":0.654}},"BROCCOLI":{"stage":"LEAF SENESCENCE","kc":0.99,"T3":{"ONVI":0.744,"MSAVI":0.697},"T4":{"ONVI":0.759,"MSAVI":0.709}}},"2026-05-12":{"RED_RADISH":{"stage":"PRE-HARVEST SENESCENCE","kc":0.96,"T3":{"ONVI":0.585,"MSAVI":0.536},"T4":{"ONVI":0.602,"MSAVI":0.545}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.957,"T3":{"ONVI":0.657,"MSAVI":0.606},"T4":{"ONVI":0.673,"MSAVI":0.628}},"BROCCOLI":{"stage":"LEAF SENESCENCE","kc":0.97,"T3":{"ONVI":0.708,"MSAVI":0.666},"T4":{"ONVI":0.723,"MSAVI":0.681}}},"2026-05-13":{"RED_RADISH":{"stage":"PRE-HARVEST SENESCENCE","kc":0.95,"T3":{"ONVI":0.559,"MSAVI":0.509},"T4":{"ONVI":0.579,"MSAVI":0.522}},"LETTUCE":{"stage":"OUTER LEAF SENESCENCE","kc":0.95,"T3":{"ONVI":0.629,"MSAVI":0.579},"T4":{"ONVI":0.641,"MSAVI":0.604}},"BROCCOLI":{"stage":"LEAF SENESCENCE","kc":0.95,"T3":{"ONVI":0.668,"MSAVI":0.636},"T4":{"ONVI":0.685,"MSAVI":0.649}}}};
+        const SOIL_VWC_DATABASE = {"2026-03-20":{"T2":0.368,"T4":0.388},"2026-03-21":{"T2":0.368,"T4":0.388},"2026-03-22":{"T2":0.373,"T4":0.393},"2026-03-23":{"T2":0.391,"T4":0.411},"2026-03-24":{"T2":0.384,"T4":0.403},"2026-03-25":{"T2":0.384,"T4":0.403},"2026-03-26":{"T2":0.384,"T4":0.404},"2026-03-27":{"T2":0.385,"T4":0.404},"2026-03-28":{"T2":0.385,"T4":0.405},"2026-03-29":{"T2":0.385,"T4":0.405},"2026-03-30":{"T2":0.385,"T4":0.405},"2026-03-31":{"T2":0.386,"T4":0.406},"2026-04-01":{"T2":0.386,"T4":0.406},"2026-04-02":{"T2":0.386,"T4":0.406},"2026-04-03":{"T2":0.386,"T4":0.407},"2026-04-04":{"T2":0.387,"T4":0.407},"2026-04-05":{"T2":0.387,"T4":0.407},"2026-04-06":{"T2":0.387,"T4":0.408},"2026-04-07":{"T2":0.387,"T4":0.408},"2026-04-08":{"T2":0.388,"T4":0.409},"2026-04-09":{"T2":0.388,"T4":0.409},"2026-04-10":{"T2":0.388,"T4":0.409},"2026-04-11":{"T2":0.388,"T4":0.41},"2026-04-12":{"T2":0.389,"T4":0.41},"2026-04-13":{"T2":0.389,"T4":0.41},"2026-04-14":{"T2":0.389,"T4":0.411},"2026-04-15":{"T2":0.389,"T4":0.411},"2026-04-16":{"T2":0.39,"T4":0.411},"2026-04-17":{"T2":0.39,"T4":0.412},"2026-04-18":{"T2":0.39,"T4":0.412},"2026-04-19":{"T2":0.39,"T4":0.413},"2026-04-20":{"T2":0.391,"T4":0.413},"2026-04-21":{"T2":0.391,"T4":0.413},"2026-04-22":{"T2":0.391,"T4":0.414},"2026-04-23":{"T2":0.391,"T4":0.414},"2026-04-24":{"T2":0.392,"T4":0.414},"2026-04-25":{"T2":0.392,"T4":0.415},"2026-04-26":{"T2":0.392,"T4":0.415},"2026-04-27":{"T2":0.392,"T4":0.415},"2026-04-28":{"T2":0.393,"T4":0.416},"2026-04-29":{"T2":0.378,"T4":0.403},"2026-04-30":{"T2":0.383,"T4":0.408},"2026-05-01":{"T2":0.374,"T4":0.397},"2026-05-02":{"T2":0.37,"T4":0.392},"2026-05-03":{"T2":0.364,"T4":0.386},"2026-05-04":{"T2":0.364,"T4":0.386},"2026-05-05":{"T2":0.352,"T4":0.372},"2026-05-06":{"T2":0.33,"T4":0.349},"2026-05-07":{"T2":0.309,"T4":0.325},"2026-05-08":{"T2":0.3,"T4":0.318},"2026-05-09":{"T2":0.303,"T4":0.323},"2026-05-10":{"T2":0.303,"T4":0.32},"2026-05-11":{"T2":0.303,"T4":0.319},"2026-05-12":{"T2":0.299,"T4":0.315},"2026-05-13":{"T2":0.292,"T4":0.309}};
+
+        document.getElementById('obs_date').valueAsDate = new Date();
+
+        const CROP_CONFIG = {
+            LETTUCE: { zr_min: 0.10, zr_max: 0.30, d_start: 7, d_max: 35, p: 0.08, kc_init: 0.70, kc_mid: 1.00, kc_end: 0.95, s_init: 20, s_dev: 15, s_mid: 10, s_late: 10, m_min: 0.05, m_max: 0.80, vkc_min: 0.70, vkc_max: 1.00 },
+            RED_RADISH: { zr_min: 0.08, zr_max: 0.25, d_start: 5, d_max: 25, p: 0.08, kc_init: 0.70, kc_mid: 1.00, kc_end: 0.95, s_init: 10, s_dev: 10, s_mid: 5, s_late: 5, m_min: 0.05, m_max: 0.75, vkc_min: 0.60, vkc_max: 1.00 },
+            BROCCOLI: { zr_min: 0.10, zr_max: 0.35, d_start: 7, d_max: 40, p: 0.08, kc_init: 0.70, kc_mid: 1.05, kc_end: 0.95, s_init: 25, s_dev: 20, s_mid: 15, s_late: 10, m_min: 0.05, m_max: 0.85, vkc_min: 0.70, vkc_max: 1.05 }
+        };
+
+        // DYNAMIC BASELINE CALCULATOR
+        function getDynamicBaseline(obsDateStr, cropKey, currentStage) {
+            let maxFused = 0.0;
+            let targetTime = new Date(obsDateStr).getTime();
+            for (let i = 0; i <= 6; i++) {
+                let checkTime = targetTime - (i * 24 * 60 * 60 * 1000);
+                let checkDateStr = new Date(checkTime).toISOString().split('T')[0];
+                if (SENSOR_DATABASE[checkDateStr] && SENSOR_DATABASE[checkDateStr][cropKey]) {
+                    let d = SENSOR_DATABASE[checkDateStr][cropKey];
+                    if (d.stage === currentStage && d.T3) {
+                        let fused = (d.T3.MSAVI + d.T3.ONVI) / 2.0;
+                        if (fused > maxFused) maxFused = fused;
+                    }
+                }
+            }
+            return maxFused > 0 ? maxFused : 0.55; 
+        }
+
+        // AUTO FILL UI FUNCTION
+        function autoFillIndices() {
+            const obsDate = document.getElementById('obs_date').value;
+            const crop = document.getElementById('crop').value;
+            
+            if (SENSOR_DATABASE[obsDate] && SENSOR_DATABASE[obsDate][crop]) {
+                const stage = SENSOR_DATABASE[obsDate][crop].stage;
+                const dynamicBase = getDynamicBaseline(obsDate, crop, stage);
+                
+                document.getElementById('baseline_t3').value = dynamicBase.toFixed(3);
+                document.getElementById('baseline_t4').value = dynamicBase.toFixed(3);
+
+                const t3Data = SENSOR_DATABASE[obsDate][crop]["T3"];
+                if (t3Data) {
+                    document.getElementById('msavi_t3').value = t3Data.MSAVI;
+                    document.getElementById('onvi_t3').value = t3Data.ONVI;
+                }
+                const t4Data = SENSOR_DATABASE[obsDate][crop]["T4"];
+                if (t4Data) {
+                    document.getElementById('msavi_t4').value = t4Data.MSAVI;
+                    document.getElementById('onvi_t4').value = t4Data.ONVI;
+                }
+            }
+            
+            if (SOIL_VWC_DATABASE[obsDate]) {
+                document.getElementById('t2_vwc').value = SOIL_VWC_DATABASE[obsDate].T2;
+                document.getElementById('t2_vwc_t4').value = SOIL_VWC_DATABASE[obsDate].T4;
+            }
+        }
+
+        document.getElementById('crop').addEventListener('change', function() {
+            document.getElementById('prev_t1_dep').value = t1Depletions[this.value].toFixed(2);
+            updateCropStatus();
+            autoFillIndices();
+        });
+        
+        document.getElementById('obs_date').addEventListener('change', function() {
+            updateCropStatus();
+            autoFillIndices();
+        });
+        document.getElementById('das').addEventListener('input', updateCropStatus);
+
+        function updateCropStatus() {
+            const obsDate = document.getElementById('obs_date').value;
+            const cropKey = document.getElementById('crop').value;
+            const das = parseInt(document.getElementById('das').value) || 0;
+            const effAge = (cropKey === 'RED_RADISH') ? das : das + 16;
+            
+            let stage = "OUTSIDE EXP. DATES";
+            let kc_display = "Auto-calc (Fallback)";
+            
+            if (SENSOR_DATABASE[obsDate] && SENSOR_DATABASE[obsDate][cropKey]) {
+                stage = SENSOR_DATABASE[obsDate][cropKey].stage;
+                kc_display = SENSOR_DATABASE[obsDate][cropKey].kc.toFixed(2);
+            }
+
+            document.getElementById('ui_eff_age').innerText = effAge;
+            document.getElementById('ui_eff_age_label').innerText = (cropKey === 'RED_RADISH') ? " (Nursery Grown)" : " (Includes 16-day transplant age)";
+            document.getElementById('ui_growth_stage').innerText = stage;
+            document.getElementById('ui_kc_val').innerText = kc_display;
+        }
+
+        updateCropStatus();
+        autoFillIndices();
+
+        async function fetchWeather() {
+            const btn = document.getElementById('btn_weather');
+            btn.innerHTML = '⏳ Fetching...';
+            try {
+                const obsDateStr = document.getElementById('obs_date').value;
+                if (!obsDateStr) { alert("Select Observation Date first."); btn.innerHTML = '🌤️ Auto-Fetch Weather'; return; }
+                const obsDateObj = new Date(obsDateStr);
+                const start_date = new Date(obsDateObj.getTime() - 86400000).toISOString().split('T')[0];
+                
+                const url = `https://archive-api.open-meteo.com/v1/archive?latitude=36.55&longitude=139.90&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=Asia%2FTokyo&start_date=${start_date}&end_date=${obsDateStr}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.daily) {
+                    document.getElementById('rain_yest').value = data.daily.precipitation_sum[0] || 0;
+                    document.getElementById('rain_fcst').value = data.daily.precipitation_sum[1] || 0;
+                    document.getElementById('et0').value = data.daily.et0_fao_evapotranspiration[1] || 0;
+                    btn.innerHTML = '✅ Synced!';
+                } else { btn.innerHTML = '❌ No Data'; }
+                setTimeout(() => { btn.innerHTML = '🌤️ Auto-Fetch Weather'; }, 3000);
+            } catch (err) {
+                btn.innerHTML = '❌ Failed';
+                setTimeout(() => { btn.innerHTML = '🌤️ Auto-Fetch Weather'; }, 3000);
+            }
+        }
+
+        function toggleTreatmentInputs() {
+            const selected = document.getElementById('treatment_select').value;
+            document.querySelectorAll('.treatment-params').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`params_${selected.toLowerCase()}`).classList.remove('hidden');
+        }
+
+        function getRootDepth(cfg, das) {
+            if (das <= cfg.d_start) return cfg.zr_min;
+            if (das >= cfg.d_max) return cfg.zr_max;
+            return cfg.zr_min + ((das - cfg.d_start) / (cfg.d_max - cfg.d_start)) * (cfg.zr_max - cfg.zr_min);
+        }
+
+        function getKc(cfg, das) {
+            if (das <= cfg.s_init) return cfg.kc_init;
+            if (das <= cfg.s_init + cfg.s_dev) return cfg.kc_init + ((das - cfg.s_init) / cfg.s_dev) * (cfg.kc_mid - cfg.kc_init);
+            if (das <= cfg.s_init + cfg.s_dev + cfg.s_mid) return cfg.kc_mid;
+            return cfg.kc_mid + ((das - (cfg.s_init + cfg.s_dev + cfg.s_mid)) / cfg.s_late) * (cfg.kc_end - cfg.kc_mid);
+        }
+
+        // ==========================================
+        // SINGLE MANUAL EXECUTION
+        // ==========================================
+        async function calculateSelectedTreatment(isManualSync = false) {
+            const obsDate = document.getElementById('obs_date').value;
+            const cropKey = document.getElementById('crop').value;
+            const das = parseInt(document.getElementById('das').value) || 0;
+            const et0 = parseFloat(document.getElementById('et0').value) || 0;
+            const rainFcst = parseFloat(document.getElementById('rain_fcst').value) || 0;
+            const rainYest = parseFloat(document.getElementById('rain_yest').value) || 0;
+            const treatment = document.getElementById('treatment_select').value;
+
+            const record = generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment);
+
+            if (isManualSync) {
+                document.getElementById('results_card').classList.remove('hidden');
+                document.getElementById('output_content').innerHTML = `
+                    <div class="bg-slate-900 p-4 rounded border border-slate-700">
+                        <span class="text-emerald-400 font-bold">${record.treatment}</span><br>
+                        <p class="text-slate-300 mt-1">Crop: ${record.crop} | Stage: ${record.growth_stage} | Root Depth: ${record.root_depth}m</p>
+                        <div class="mt-3 text-lg font-extrabold text-white">
+                            💧 Result: ${record.result_mm} mm &nbsp;|&nbsp; ${record.result_L} L/plot
+                        </div>
+                        <p class="text-xs text-slate-400 mt-2 leading-relaxed"><strong>Decision Log:</strong> ${record.reason}</p>
+                    </div>
+                `;
+
+                if (!WEB_APP_URL.includes("PASTE_YOUR")) {
+                    const statusEl = document.getElementById('sync_status');
+                    statusEl.innerText = "⏳ Syncing to Cloud...";
+                    const payload = { ...record, entry_time: new Date().toISOString().replace('T', ' ').substring(0, 19) };
+                    fetch(WEB_APP_URL, {
+                        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    }).then(() => {
+                        statusEl.innerText = "✅ Synced to Sheet!";
+                        statusEl.className = "text-xs bg-emerald-900/50 border border-emerald-700 px-3 py-2 rounded-full text-emerald-300 flex items-center";
+                    });
+                }
+            }
+
+            logData.push(record);
+            updateTable();
+        }
+
+        // ==========================================
+        // BATCH SIMULATION ENGINE
+        // ==========================================
+        async function runFullSimulation() {
+            const btn = document.getElementById('btn_simulate');
+            btn.innerHTML = '⏳ Simulating 648 Records...';
+            btn.disabled = true;
+            btn.classList.replace('bg-indigo-600', 'bg-slate-600');
+
+            try {
+                // 1. Fetch bulk meteorological data instantly
+                const url = `https://archive-api.open-meteo.com/v1/archive?latitude=36.55&longitude=139.90&start_date=2026-03-20&end_date=2026-05-13&daily=precipitation_sum,et0_fao_evapotranspiration&timezone=Asia%2FTokyo`;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                let bulkWeather = {};
+                for(let i=1; i < data.daily.time.length; i++) {
+                    bulkWeather[data.daily.time[i]] = {
+                        et0: data.daily.et0_fao_evapotranspiration[i] || 2.5,
+                        rain_fcst: data.daily.precipitation_sum[i] || 0.0,
+                        rain_yest: data.daily.precipitation_sum[i-1] || 0.0
+                    };
+                }
+
+                // 2. Setup Loop Arrays
+                const crops = ['BROCCOLI', 'LETTUCE', 'RED_RADISH'];
+                const treatments = ['T1', 'T2', 'T3', 'T4'];
+                
+                // 3. Reset Memory and Logs for a fresh 54-day pass
+                t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
+                logData = []; 
+
+                // 4. Run the deep simulation loop
+                for (let i=1; i < data.daily.time.length; i++) {
+                    let obsDate = data.daily.time[i]; 
+                    let das = i; // Day 1 is Mar 21
+                    
+                    let w = bulkWeather[obsDate];
+
+                    for (let c of crops) {
+                        for (let t of treatments) {
+                            // Automatically set the UI boxes via invisible state pass
+                            let record = generateDecisionRecord(obsDate, c, das, w.et0, w.rain_fcst, w.rain_yest, t, true);
+                            logData.push(record);
+                        }
+                    }
+                }
+
+                updateTable();
+                downloadCSV(); // Automatically download the massive dataset
+
+                btn.innerHTML = '✅ Simulation Complete (CSV Downloaded)';
+                btn.classList.replace('bg-slate-600', 'bg-emerald-600');
+                alert("Simulated 648 treatment decisions successfully!\n\nThe full dataset has been downloaded to your computer as a CSV to prevent crashing the Google Sheets API rate limits.");
+
+                setTimeout(() => { 
+                    btn.innerHTML = '🚀 Auto-Simulate Full Experiment (Mar 21 - May 13)'; 
+                    btn.classList.replace('bg-emerald-600', 'bg-indigo-600');
+                    btn.disabled = false;
+                }, 5000);
+
+            } catch (err) {
+                console.error(err);
+                btn.innerHTML = '❌ Simulation Failed';
+                btn.classList.replace('bg-slate-600', 'bg-red-600');
+                btn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // CORE ENGINE (Shared by Manual and Batch)
+        // ==========================================
+        function generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment, isBatch = false) {
+            const cfg = CROP_CONFIG[cropKey];
+            const effAge = (cropKey === 'RED_RADISH') ? das : das + 16; 
+            const rd = getRootDepth(cfg, effAge);
+            
+            let kc = 0; let currentStage = "OUTSIDE EXP. DATES";
+            if (SENSOR_DATABASE[obsDate] && SENSOR_DATABASE[obsDate][cropKey]) {
+                kc = SENSOR_DATABASE[obsDate][cropKey].kc;
+                currentStage = SENSOR_DATABASE[obsDate][cropKey].stage;
+            } else { kc = getKc(cfg, effAge); }
+            
+            const fc = 0.45, wp = 0.18, vwcThreshold = 0.40, area = 0.5;
+            const deltaThreshold = 0.05; 
+            const tawMm = 1000 * (fc - wp) * rd;
+            const rawMm = cfg.p * tawMm;
+
+            let targetMm = 0; let reason = "";
+            let log_vwc = "N/A", log_baseline = "N/A", log_msavi = "N/A", log_onvi = "N/A", log_fused = "N/A", log_prev_dep = "N/A", inputCheck = "";
+
+            if (treatment === 'T1') {
+                log_prev_dep = t1Depletions[cropKey]; // ALWAYS pull from dynamic memory
+                let preT1 = Math.max(0, Math.min(log_prev_dep + (kc * et0) - rainYest, tawMm));
+                inputCheck = `Dep: ${preT1.toFixed(2)}`;
+                
+                let nextT1Dep = 0;
+                if (rainFcst > 2.0) {
+                    reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                    nextT1Dep = preT1;
+                } else if (preT1 > rawMm) {
+                    targetMm = preT1;
+                    reason = `Triggered: Depletion (${preT1.toFixed(2)}mm) > RAW (${rawMm.toFixed(2)}mm).`;
+                    nextT1Dep = 0.00; 
+                } else {
+                    reason = `Skipped: Depletion (${preT1.toFixed(2)}mm) safe (RAW: ${rawMm.toFixed(2)}mm).`;
+                    nextT1Dep = preT1;
+                }
+
+                t1Depletions[cropKey] = nextT1Dep;
+                if (!isBatch && document.getElementById('crop').value === cropKey) {
+                    document.getElementById('prev_t1_dep').value = nextT1Dep.toFixed(2);
+                }
+            } 
+            else if (treatment === 'T2') {
+                log_vwc = SOIL_VWC_DATABASE[obsDate] ? SOIL_VWC_DATABASE[obsDate].T2 : (parseFloat(document.getElementById('t2_vwc').value) || 0.38);
+                inputCheck = `VWC: ${log_vwc}`;
+                
+                let maxT2Dose = 5.0; 
+                let requiredRefill = Math.max(1000 * (fc - log_vwc) * rd, 0.0);
+                let actualRefill = Math.min(requiredRefill, maxT2Dose);
+                
+                if (rainFcst > 2.0) { reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                } else if (log_vwc < vwcThreshold) {
+                    targetMm = Math.max(actualRefill - rainFcst, 0.0);
+                    reason = `Triggered: VWC (${log_vwc}) < threshold (${vwcThreshold}). Applied capped micro-dose.`;
+                } else { reason = `Skipped: VWC is safe (${log_vwc} >= ${vwcThreshold}).`; }
+            } 
+            else if (treatment === 'T3') {
+                log_baseline = getDynamicBaseline(obsDate, cropKey, currentStage);
+                if (SENSOR_DATABASE[obsDate] && SENSOR_DATABASE[obsDate][cropKey] && SENSOR_DATABASE[obsDate][cropKey].T3) {
+                    log_msavi = SENSOR_DATABASE[obsDate][cropKey].T3.MSAVI;
+                    log_onvi = SENSOR_DATABASE[obsDate][cropKey].T3.ONVI;
+                } else {
+                    log_msavi = parseFloat(document.getElementById('msavi_t3').value) || 0.48;
+                    log_onvi = parseFloat(document.getElementById('onvi_t3').value) || 0.49;
+                }
+                
+                const fusedIndex = (log_msavi + log_onvi) / 2.0;
+                log_fused = fusedIndex.toFixed(3);
+                inputCheck = `Base: ${log_baseline.toFixed(3)} | Idx: ${log_fused}`;
+                const indexDrop = log_baseline - fusedIndex;
+                
+                let divisor = (cfg.m_max - cfg.m_min) || 0.0001;
+                let clampedM = Math.max(cfg.m_min, Math.min(fusedIndex, cfg.m_max));
+                let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / divisor) * (cfg.vkc_max - cfg.vkc_min);
+
+                if (rainFcst > 2.0) { reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                } else if (indexDrop >= deltaThreshold) {
+                    targetMm = Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0);
+                    reason = `Triggered: Index dropped by ${indexDrop.toFixed(2)}. Applied 1.5x ET₀ Recovery Dose.`;
+                } else { reason = `Skipped: Canopy is stable. Drop (${indexDrop.toFixed(2)}) is less than 0.05 limit.`; }
+            } 
+            else if (treatment === 'T4') {
+                log_vwc = SOIL_VWC_DATABASE[obsDate] ? SOIL_VWC_DATABASE[obsDate].T4 : (parseFloat(document.getElementById('t2_vwc_t4').value) || 0.38);
+                log_baseline = getDynamicBaseline(obsDate, cropKey, currentStage);
+                if (SENSOR_DATABASE[obsDate] && SENSOR_DATABASE[obsDate][cropKey] && SENSOR_DATABASE[obsDate][cropKey].T4) {
+                    log_msavi = SENSOR_DATABASE[obsDate][cropKey].T4.MSAVI;
+                    log_onvi = SENSOR_DATABASE[obsDate][cropKey].T4.ONVI;
+                } else {
+                    log_msavi = parseFloat(document.getElementById('msavi_t4').value) || 0.48;
+                    log_onvi = parseFloat(document.getElementById('onvi_t4').value) || 0.49;
+                }
+                
+                const fusedIndex = (log_msavi + log_onvi) / 2.0;
+                log_fused = fusedIndex.toFixed(3);
+                inputCheck = `VWC: ${log_vwc} | Idx: ${log_fused}`;
+                const indexDrop = log_baseline - fusedIndex;
+                
+                let divisor = (cfg.m_max - cfg.m_min) || 0.0001;
+                let clampedM = Math.max(cfg.m_min, Math.min(fusedIndex, cfg.m_max));
+                let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / divisor) * (cfg.vkc_max - cfg.vkc_min);
+
+                let soilTriggered = (log_vwc < vwcThreshold);
+                let canopyTriggered = (indexDrop >= deltaThreshold);
+
+                if (rainFcst > 2.0) {
+                    reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                } else if (soilTriggered || canopyTriggered) {
+                    let refillT2 = 0; let refillT3 = 0;
+                    if (soilTriggered) { 
+                        let req = Math.max(1000 * (fc - log_vwc) * rd, 0.0);
+                        refillT2 = Math.max(Math.min(req, 5.0) - rainFcst, 0.0); 
+                    }
+                    if (canopyTriggered) { refillT3 = Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0); }
+                    
+                    if (soilTriggered && canopyTriggered) {
+                        targetMm = (refillT2 + refillT3) / 2.0;
+                        reason = `Triggered: Soil AND Canopy Drop crossed limits. Applied averaged recovery dose.`;
+                    } else if (soilTriggered) {
+                        targetMm = refillT2;
+                        reason = `Triggered: Only Soil VWC (${log_vwc} < ${vwcThreshold}) crossed limit.`;
+                    } else if (canopyTriggered) {
+                        targetMm = refillT3;
+                        reason = `Triggered: Only Canopy Anomaly detected. Soil is safe.`;
+                    }
+                } else { reason = `Skipped: Both Soil and Canopy Drop are stable.`; }
+            }
+
+            let plotL = targetMm > 0 ? (targetMm * area).toFixed(2) : "0.00";
+
+            return {
+                date: obsDate, crop: cropKey, das: das, eff_age: effAge, growth_stage: currentStage,
+                treatment: treatment, et0: et0, rain_fcst: rainFcst, rain_yest: rainYest,
+                root_depth: rd.toFixed(2), taw: tawMm.toFixed(2), raw: rawMm.toFixed(2),
+                prev_dep: log_prev_dep, vwc: log_vwc, baseline: log_baseline, msavi: log_msavi,
+                onvi: log_onvi, fused_index: log_fused, result_mm: targetMm.toFixed(2),
+                result_L: plotL, reason: reason, inputCheck: inputCheck 
+            };
+        }
+
+        function updateTable() {
+            let tbody = document.getElementById('log_tbody');
+            tbody.innerHTML = '';
+            // Display only the last 20 records in the UI so the browser doesn't freeze
+            let displayData = logData.slice(-20).reverse();
+            displayData.forEach(row => {
+                let shortStage = row.growth_stage.split(' ')[0]; 
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-700 border-b border-slate-700/50">
+                        <td class="p-2 whitespace-nowrap">${row.date}</td>
+                        <td class="p-2">${row.crop}</td>
+                        <td class="p-2 truncate max-w-[80px]" title="${row.growth_stage}">${shortStage}</td>
+                        <td class="p-2 font-bold text-emerald-400">${row.treatment}</td>
+                        <td class="p-2 text-[10px] text-slate-400 font-mono whitespace-nowrap">${row.inputCheck}</td>
+                        <td class="p-2 whitespace-nowrap text-white font-bold">${row.result_mm} mm</td>
+                        <td class="p-2 text-xs text-slate-400 max-w-[150px] truncate" title="${row.reason}">${row.reason}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function downloadCSV() {
+            let csv = "Date,Crop,DAS,Effective_Age_Days,Growth_Stage,Treatment,ET0_mm,Rain_Fcst_mm,Rain_Yest_mm,Root_Depth_m,TAW_mm,RAW_mm,T1_Prev_Dep_mm,T2_T4_Soil_VWC,T3_T4_Baseline_Index,MSAVI,ONVI,Fused_Index,Result_mm,Plot_Liters,Reason\n";
+            logData.forEach(r => {
+                let safeReason = r.reason.replace(/"/g, '""'); 
+                csv += `${r.date},${r.crop},${r.das},${r.eff_age},"${r.growth_stage}",${r.treatment},${r.et0},${r.rain_fcst},${r.rain_yest},${r.root_depth},${r.taw},${r.raw},${r.prev_dep},${r.vwc},${r.baseline},${r.msavi},${r.onvi},${r.fused_index},${r.result_mm},${r.result_L},"${safeReason}"\n`;
+            });
+            let blob = new Blob([csv], { type: 'text/csv' });
+            let url = window.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'FeasiDrop_Comprehensive_Simulation_Log.csv');
+            a.click();
+        }
+
+        // PWA REGISTRATION
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
