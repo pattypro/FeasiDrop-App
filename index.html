@@ -12,9 +12,10 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Hide scrollbar for cleaner mobile look */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .pulse-anim { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="bg-gray-100 flex justify-center h-screen overflow-hidden font-sans">
@@ -25,7 +26,6 @@
         <!-- Top App Bar -->
         <header class="bg-emerald-600 text-white p-4 flex justify-between items-center shadow-md z-10">
             <div class="flex items-center gap-3">
-                <!-- Premium SVG Logo -->
                 <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect width="100" height="100" rx="22" fill="#059669"/>
                     <path d="M50 20 L27.5 60 A25 25 0 1 0 72.5 60 Z" fill="white"/>
@@ -33,9 +33,11 @@
                 </svg>
                 <h1 class="text-xl font-bold tracking-wide">FeasiDrop</h1>
             </div>
-            <button class="text-white focus:outline-none">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-            </button>
+            <!-- AI Language Toggle -->
+            <select id="ai_language" class="bg-emerald-700 text-white text-xs font-bold py-1 px-2 rounded border border-emerald-500 focus:outline-none">
+                <option value="EN">🇺🇸 EN</option>
+                <option value="RW">🇷🇼 RW</option>
+            </select>
         </header>
 
         <!-- Main Scrollable Content -->
@@ -51,11 +53,11 @@
                 <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Observation Date</label>
-                        <input type="date" id="obs_date" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
+                        <input type="date" id="obs_date" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Target Crop</label>
-                        <select id="crop" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
+                        <select id="crop" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                             <option value="LETTUCE">Lettuce (0.5m² plot)</option>
                             <option value="RED_RADISH">Red Radish (0.5m² plot)</option>
                             <option value="BROCCOLI">Broccoli (0.5m² plot)</option>
@@ -83,7 +85,6 @@
                     </div>
                 </div>
 
-                <!-- DYNAMIC TRACKER -->
                 <div class="mt-4 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
                     <p class="text-[10px] uppercase font-bold text-emerald-600 mb-1">Phenology Tracker</p>
                     <div class="flex justify-between items-center text-xs text-gray-700">
@@ -97,14 +98,13 @@
             <!-- STEP 2: TREATMENT -->
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
                 <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">Algorithm Selection</h2>
-                <select id="treatment_select" onchange="toggleTreatmentInputs()" class="w-full bg-emerald-600 text-white font-bold text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-3 shadow-sm mb-4">
+                <select id="treatment_select" onchange="toggleTreatmentInputs()" class="w-full bg-emerald-600 text-white font-bold text-sm rounded-lg p-3 shadow-sm mb-4">
                     <option value="T1">Treatment 1: FAO-56 Standard</option>
                     <option value="T2">Treatment 2: Soil Sensor Only</option>
                     <option value="T3">Treatment 3: Canopy Delta</option>
                     <option value="T4">Treatment 4: Integrated DSS</option>
                 </select>
 
-                <!-- Dynamic Parameters -->
                 <div id="params_t1" class="treatment-params">
                     <label class="block text-xs font-medium text-gray-500 mb-1">Current T1 Depletion (mm)</label>
                     <input type="number" step="0.1" id="prev_t1_dep" value="0.0" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
@@ -161,15 +161,13 @@
             </button>
 
             <!-- ALERT / OUTPUT CARD (Hidden by default) -->
-            <div id="results_card" class="hidden">
-                <!-- Content injected via JS -->
-            </div>
+            <div id="results_card" class="hidden"></div>
 
             <!-- DATA LOG TABLE -->
             <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Device Log</h2>
-                    <button onclick="clearData()" class="text-[10px] text-red-500 border border-red-200 px-2 py-1 rounded">Clear</button>
+                    <button onclick="clearData()" class="text-[10px] text-red-500 border border-red-200 px-2 py-1 rounded">Clear Memory</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-gray-600">
@@ -195,11 +193,11 @@
                 <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
                 <span class="text-[10px] font-bold">Home</span>
             </button>
-            <button class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+            <button class="flex flex-col items-center text-gray-400">
                 <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 <span class="text-[10px] font-medium">Logs</span>
             </button>
-            <button class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+            <button class="flex flex-col items-center text-gray-400">
                 <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span class="text-[10px] font-medium">Settings</span>
             </button>
@@ -207,7 +205,7 @@
     </div>
 
     <script>
-        // === LOCAL STORAGE INTEGRATION ===
+        // === LOCAL STORAGE MEMORY ENGINE ===
         let logData = [];
         let t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
 
@@ -230,23 +228,49 @@
             document.getElementById('prev_t1_dep').value = t1Depletions[this.value].toFixed(2);
             updateCropStatus();
         });
-        
         document.getElementById('obs_date').addEventListener('change', updateCropStatus);
         document.getElementById('das').addEventListener('input', updateCropStatus);
 
         function updateCropStatus() {
             const cropKey = document.getElementById('crop').value;
             const das = parseInt(document.getElementById('das').value) || 0;
-            
-            // FIXED: Removed +16 day offset. Age now strictly equals DAS for live tracking.
-            const effAge = das; 
+            const effAge = das; // FIXED: Age perfectly syncs with DAS
             
             const kc = getKc(CROP_CONFIG[cropKey], effAge);
             document.getElementById('ui_eff_age').innerText = effAge;
             document.getElementById('ui_growth_stage').innerText = "Active";
             document.getElementById('ui_kc_val').innerText = kc.toFixed(2);
-            
             document.getElementById('prev_t1_dep').value = t1Depletions[cropKey].toFixed(2);
+        }
+
+        function toggleTreatmentInputs() {
+            const selected = document.getElementById('treatment_select').value;
+            document.querySelectorAll('.treatment-params').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`params_${selected.toLowerCase()}`).classList.remove('hidden');
+        }
+
+        function getRootDepth(cfg, das) {
+            if (das <= cfg.d_start) return cfg.zr_min;
+            if (das >= cfg.d_max) return cfg.zr_max;
+            return cfg.zr_min + ((das - cfg.d_start) / (cfg.d_max - cfg.d_start)) * (cfg.zr_max - cfg.zr_min);
+        }
+
+        function getKc(cfg, das) {
+            if (das <= cfg.s_init) return cfg.kc_init;
+            if (das <= cfg.s_init + cfg.s_dev) return cfg.kc_init + ((das - cfg.s_init) / cfg.s_dev) * (cfg.kc_mid - cfg.kc_init);
+            if (das <= cfg.s_init + cfg.s_dev + cfg.s_mid) return cfg.kc_mid;
+            return cfg.kc_mid + ((das - (cfg.s_init + cfg.s_dev + cfg.s_mid)) / cfg.s_late) * (cfg.kc_end - cfg.kc_mid);
+        }
+
+        function clearData() {
+            if(confirm("Clear all saved logs and free memory?")) {
+                logData = [];
+                t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
+                localStorage.removeItem('feasiDropLogs');
+                localStorage.removeItem('feasiDropDepletions');
+                updateTable();
+                updateCropStatus();
+            }
         }
 
         async function fetchWeather() {
@@ -275,95 +299,11 @@
             }
         }
 
-        function toggleTreatmentInputs() {
-            const selected = document.getElementById('treatment_select').value;
-            document.querySelectorAll('.treatment-params').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`params_${selected.toLowerCase()}`).classList.remove('hidden');
-        }
-
-        function getRootDepth(cfg, das) {
-            if (das <= cfg.d_start) return cfg.zr_min;
-            if (das >= cfg.d_max) return cfg.zr_max;
-            return cfg.zr_min + ((das - cfg.d_start) / (cfg.d_max - cfg.d_start)) * (cfg.zr_max - cfg.zr_min);
-        }
-
-        function getKc(cfg, das) {
-            if (das <= cfg.s_init) return cfg.kc_init;
-            if (das <= cfg.s_init + cfg.s_dev) return cfg.kc_init + ((das - cfg.s_init) / cfg.s_dev) * (cfg.kc_mid - cfg.kc_init);
-            if (das <= cfg.s_init + cfg.s_dev + cfg.s_mid) return cfg.kc_mid;
-            return cfg.kc_mid + ((das - (cfg.s_init + cfg.s_dev + cfg.s_mid)) / cfg.s_late) * (cfg.kc_end - cfg.kc_mid);
-        }
-
-        function clearData() {
-            if(confirm("Are you sure you want to clear all saved logs and calculations?")) {
-                logData = [];
-                t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
-                localStorage.removeItem('feasiDropLogs');
-                localStorage.removeItem('feasiDropDepletions');
-                updateTable();
-                updateCropStatus();
-            }
-        }
-
-        async function calculateSelectedTreatment() {
-            const obsDate = document.getElementById('obs_date').value;
-            const cropKey = document.getElementById('crop').value;
-            const das = parseInt(document.getElementById('das').value) || 0;
-            const et0 = parseFloat(document.getElementById('et0').value) || 0;
-            const rainFcst = parseFloat(document.getElementById('rain_fcst').value) || 0;
-            const rainYest = parseFloat(document.getElementById('rain_yest').value) || 0;
-            const treatment = document.getElementById('treatment_select').value;
-
-            const record = generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment);
-            
-            // Save to LocalStorage immediately
-            logData.push(record);
-            localStorage.setItem('feasiDropLogs', JSON.stringify(logData));
-            localStorage.setItem('feasiDropDepletions', JSON.stringify(t1Depletions));
-
-            const resCard = document.getElementById('results_card');
-            resCard.classList.remove('hidden');
-            
-            let alertUI = "";
-            if (parseFloat(record.result_mm) > 0) {
-                alertUI = `
-                    <div class="bg-red-50 border-2 border-red-500 rounded-xl p-5 text-center shadow-sm">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-3">
-                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        </div>
-                        <h3 class="text-lg leading-6 font-bold text-red-700 uppercase tracking-widest mb-1">Action Required</h3>
-                        <p class="text-sm text-red-600 font-medium mb-4">Water Deficit Detected</p>
-                        <div class="bg-white rounded-lg p-3 border border-red-200">
-                            <p class="text-2xl font-black text-gray-900">${record.result_mm} mm</p>
-                            <p class="text-xs text-gray-500">Apply to ${record.crop} before tomorrow.</p>
-                        </div>
-                    </div>`;
-            } else {
-                alertUI = `
-                    <div class="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-5 text-center shadow-sm">
-                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 mb-3">
-                            <svg class="h-8 w-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                        </div>
-                        <h3 class="text-lg leading-6 font-bold text-emerald-700 uppercase tracking-widest mb-1">Safe</h3>
-                        <p class="text-sm text-emerald-600 font-medium mb-4">No Irrigation Needed</p>
-                        <div class="bg-white rounded-lg p-3 border border-emerald-200">
-                            <p class="text-xs text-gray-600">Conditions are stable. Check back tomorrow.</p>
-                        </div>
-                    </div>`;
-            }
-
-            resCard.innerHTML = alertUI;
-            updateTable();
-            document.getElementById('main_content').scrollTo({ top: document.getElementById('main_content').scrollHeight, behavior: 'smooth' });
-        }
-
         function generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment) {
             const cfg = CROP_CONFIG[cropKey];
-            const effAge = das; // FIXED: Age perfectly syncs with DAS
+            const effAge = das; 
             const rd = getRootDepth(cfg, effAge);
-            
             let kc = getKc(cfg, effAge); 
-            
             const fc = 0.45, wp = 0.18, vwcThreshold = 0.40;
             const deltaThreshold = 0.05; 
             const tawMm = 1000 * (fc - wp) * rd;
@@ -376,47 +316,31 @@
                 let preT1 = Math.max(0, Math.min(log_prev_dep + (kc * et0) - rainYest, tawMm));
                 
                 let nextT1Dep = 0;
-                if (rainFcst > 2.0) {
-                    reason = `Target rain > 2mm.`;
-                    nextT1Dep = preT1;
-                } else if (preT1 > rawMm) {
-                    targetMm = preT1;
-                    reason = `Depletion > RAW.`;
-                    nextT1Dep = 0.00; 
-                } else {
-                    reason = `Depletion Safe.`;
-                    nextT1Dep = preT1;
-                }
+                if (rainFcst > 2.0) { reason = `Target rain > 2mm.`; nextT1Dep = preT1;
+                } else if (preT1 > rawMm) { targetMm = preT1; reason = `Depletion > RAW.`; nextT1Dep = 0.00; 
+                } else { reason = `Depletion Safe.`; nextT1Dep = preT1; }
 
                 t1Depletions[cropKey] = nextT1Dep;
-                if (document.getElementById('crop').value === cropKey) {
-                    document.getElementById('prev_t1_dep').value = nextT1Dep.toFixed(2);
-                }
+                if (document.getElementById('crop').value === cropKey) document.getElementById('prev_t1_dep').value = nextT1Dep.toFixed(2);
             } 
             else if (treatment === 'T2') {
                 let log_vwc = parseFloat(document.getElementById('t2_vwc').value) || 0.38;
                 let requiredRefill = Math.max(1000 * (fc - log_vwc) * rd, 0.0);
-                
                 if (rainFcst > 2.0) { reason = `Target rain > 2mm.`;
-                } else if (log_vwc < vwcThreshold) {
-                    targetMm = Math.max(Math.min(requiredRefill, 5.0) - rainFcst, 0.0);
-                    reason = `VWC < threshold.`;
+                } else if (log_vwc < vwcThreshold) { targetMm = Math.max(Math.min(requiredRefill, 5.0) - rainFcst, 0.0); reason = `VWC < threshold.`;
                 } else { reason = `VWC is safe.`; }
             } 
             else if (treatment === 'T3') {
                 let log_baseline = parseFloat(document.getElementById('baseline_t3').value) || 0.55;
                 let log_msavi = parseFloat(document.getElementById('msavi_t3').value) || 0.48;
                 let log_onvi = parseFloat(document.getElementById('onvi_t3').value) || 0.49;
-                
                 const fusedIndex = (log_msavi + log_onvi) / 2.0;
                 const indexDrop = log_baseline - fusedIndex;
                 let clampedM = Math.max(cfg.m_min, Math.min(fusedIndex, cfg.m_max));
                 let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / (cfg.m_max - cfg.m_min)) * (cfg.vkc_max - cfg.vkc_min);
 
                 if (rainFcst > 2.0) { reason = `Target rain > 2mm.`;
-                } else if (indexDrop >= deltaThreshold) {
-                    targetMm = Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0);
-                    reason = `Index dropped > 0.05.`;
+                } else if (indexDrop >= deltaThreshold) { targetMm = Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0); reason = `Index dropped > 0.05.`;
                 } else { reason = `Canopy is stable.`; }
             } 
             else if (treatment === 'T4') {
@@ -444,10 +368,108 @@
                 } else { reason = `Safe parameters.`; }
             }
 
-            return {
-                date: obsDate, crop: cropKey, treatment: treatment,
-                result_mm: targetMm.toFixed(2), reason: reason
-            };
+            return { date: obsDate, crop: cropKey, das: das, treatment: treatment, result_mm: targetMm.toFixed(2), reason: reason };
+        }
+
+        // ==========================================
+        // MAIN EXECUTION & AI INJECTION
+        // ==========================================
+        async function calculateSelectedTreatment() {
+            const obsDate = document.getElementById('obs_date').value;
+            const cropKey = document.getElementById('crop').value;
+            const das = parseInt(document.getElementById('das').value) || 0;
+            const et0 = parseFloat(document.getElementById('et0').value) || 0;
+            const rainFcst = parseFloat(document.getElementById('rain_fcst').value) || 0;
+            const rainYest = parseFloat(document.getElementById('rain_yest').value) || 0;
+            const treatment = document.getElementById('treatment_select').value;
+            const lang = document.getElementById('ai_language').value;
+
+            const record = generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment);
+            
+            // 1. SAVE TO MEMORY (With Anti-Freeze limit)
+            logData.push(record);
+            if (logData.length > 500) logData.shift(); // NEVER FREEZES! Deletes old logs automatically.
+            
+            localStorage.setItem('feasiDropLogs', JSON.stringify(logData));
+            localStorage.setItem('feasiDropDepletions', JSON.stringify(t1Depletions));
+
+            // 2. RENDER ALERT UI
+            const resCard = document.getElementById('results_card');
+            resCard.classList.remove('hidden');
+            
+            let alertUI = "";
+            if (parseFloat(record.result_mm) > 0) {
+                alertUI = `
+                    <div class="bg-red-50 border-2 border-red-500 rounded-xl p-5 text-center shadow-sm">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-3">
+                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h3 class="text-lg leading-6 font-bold text-red-700 uppercase tracking-widest mb-1">Action Required</h3>
+                        <div class="bg-white rounded-lg p-3 border border-red-200 shadow-inner mt-4">
+                            <p class="text-3xl font-black text-gray-900">${record.result_mm} mm</p>
+                            <p class="text-xs text-gray-500 font-bold uppercase mt-1">Target Dose</p>
+                        </div>
+                    </div>`;
+            } else {
+                alertUI = `
+                    <div class="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-5 text-center shadow-sm">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 mb-3">
+                            <svg class="h-8 w-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h3 class="text-lg leading-6 font-bold text-emerald-700 uppercase tracking-widest mb-1">Safe</h3>
+                        <div class="bg-white rounded-lg p-3 border border-emerald-200 shadow-inner mt-4">
+                            <p class="text-xl font-bold text-gray-800">No Irrigation Needed</p>
+                        </div>
+                    </div>`;
+            }
+
+            // 3. RENDER AI AGRONOMIST BOX
+            let aiBox = `
+                <div class="mt-4 bg-indigo-50 border-2 border-indigo-100 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center gap-2 mb-2 border-b border-indigo-100 pb-2">
+                        <span class="text-xl">🤖</span>
+                        <h4 class="font-bold text-indigo-900 text-sm">FarmMind AI Advice</h4>
+                    </div>
+                    <p id="ai_advice_text" class="text-sm text-indigo-800 font-medium leading-relaxed pulse-anim">Connecting to Agronomist AI...</p>
+                </div>
+            `;
+
+            resCard.innerHTML = alertUI + aiBox;
+            updateTable();
+            document.getElementById('main_content').scrollTo({ top: document.getElementById('main_content').scrollHeight, behavior: 'smooth' });
+
+            // 4. GENERATE AI ADVICE (Simulated API Call)
+            // *NOTE: Replace this setTimeout with a real fetch() to your Google Apps Script for live AI*
+            setTimeout(() => {
+                const textEl = document.getElementById('ai_advice_text');
+                textEl.classList.remove('pulse-anim');
+                textEl.innerText = generateMockAIAdvice(record, lang);
+            }, 1800);
+        }
+
+        // ==========================================
+        // SIMULATED AI BACKEND (For Midterm Demo)
+        // ==========================================
+        function generateMockAIAdvice(record, lang) {
+            let cropName = record.crop.replace('_', ' ').toLowerCase();
+            let amount = parseFloat(record.result_mm);
+            let msg = "";
+
+            if (lang === 'EN') {
+                if (amount > 0) {
+                    msg = `Your ${cropName} is at Day ${record.das} and is currently experiencing water stress. Please apply exactly ${amount} mm of water this evening when temperatures drop to prevent yield loss.`;
+                } else {
+                    msg = `Your ${cropName} field has optimal moisture levels for Day ${record.das}. Save your water and labor today, and check the app again tomorrow morning.`;
+                }
+            } else if (lang === 'RW') {
+                let rwCrop = cropName.includes('radish') ? 'iradisi' : cropName.includes('lettuce') ? 'iseleri' : 'amashu';
+                if (amount > 0) {
+                    msg = `Igihingwa cyawe cya ${rwCrop} kigeze ku munsi wa ${record.das} kandi gikeneye amazi. Ongeramo milimetero ${amount} z'amazi uyu mugoroba kugira ngo umusaruro utangirika.`;
+                } else {
+                    msg = `Ubutaka bwawe burimo amazi ahagije uyu munsi wa ${record.das}. Reka kuhira uyu munsi kugira ngo wizigamire amazi n'imbaraga, uzongere usuzume ejo mu gitondo.`;
+                }
+            }
+            return msg;
         }
 
         function updateTable() {
@@ -468,8 +490,8 @@
 
         function downloadCSV() {
             if(logData.length === 0) { alert("No data to download."); return; }
-            let csv = "Date,Crop,Treatment,Result_mm,Reason\n";
-            logData.forEach(r => { csv += `${r.date},${r.crop},${r.treatment},${r.result_mm},"${r.reason}"\n`; });
+            let csv = "Date,Crop,DAS,Treatment,Result_mm,Reason\n";
+            logData.forEach(r => { csv += `${r.date},${r.crop},${r.das},${r.treatment},${r.result_mm},"${r.reason}"\n`; });
             let blob = new Blob([csv], { type: 'text/csv' });
             let url = window.URL.createObjectURL(blob);
             let a = document.createElement('a');
