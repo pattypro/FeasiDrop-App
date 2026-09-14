@@ -207,7 +207,7 @@
     </div>
 
     <script>
-        // === LOCAL STORAGE INTEGRATION (PREVENTS DATA LOSS ON REFRESH) ===
+        // === LOCAL STORAGE INTEGRATION ===
         let logData = [];
         let t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
 
@@ -237,14 +237,15 @@
         function updateCropStatus() {
             const cropKey = document.getElementById('crop').value;
             const das = parseInt(document.getElementById('das').value) || 0;
-            const effAge = (cropKey === 'RED_RADISH') ? das : das + 16;
+            
+            // FIXED: Removed +16 day offset. Age now strictly equals DAS for live tracking.
+            const effAge = das; 
             
             const kc = getKc(CROP_CONFIG[cropKey], effAge);
             document.getElementById('ui_eff_age').innerText = effAge;
             document.getElementById('ui_growth_stage').innerText = "Active";
             document.getElementById('ui_kc_val').innerText = kc.toFixed(2);
             
-            // Sync UI with local memory
             document.getElementById('prev_t1_dep').value = t1Depletions[cropKey].toFixed(2);
         }
 
@@ -323,7 +324,6 @@
             const resCard = document.getElementById('results_card');
             resCard.classList.remove('hidden');
             
-            // Dynamic Alert UI matching the mockups
             let alertUI = "";
             if (parseFloat(record.result_mm) > 0) {
                 alertUI = `
@@ -354,25 +354,22 @@
 
             resCard.innerHTML = alertUI;
             updateTable();
-            
-            // Scroll to results
             document.getElementById('main_content').scrollTo({ top: document.getElementById('main_content').scrollHeight, behavior: 'smooth' });
         }
 
         function generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment) {
             const cfg = CROP_CONFIG[cropKey];
-            const effAge = (cropKey === 'RED_RADISH') ? das : das + 16; 
+            const effAge = das; // FIXED: Age perfectly syncs with DAS
             const rd = getRootDepth(cfg, effAge);
             
             let kc = getKc(cfg, effAge); 
             
-            const fc = 0.45, wp = 0.18, vwcThreshold = 0.40, area = 0.5;
+            const fc = 0.45, wp = 0.18, vwcThreshold = 0.40;
             const deltaThreshold = 0.05; 
             const tawMm = 1000 * (fc - wp) * rd;
             const rawMm = cfg.p * tawMm;
 
             let targetMm = 0; let reason = "";
-            let inputCheck = "";
 
             if (treatment === 'T1') {
                 let log_prev_dep = parseFloat(document.getElementById('prev_t1_dep').value) || t1Depletions[cropKey]; 
@@ -481,7 +478,6 @@
             a.click();
         }
 
-        // Run table generation on initial load to pull from LocalStorage
         updateTable();
         updateCropStatus();
 
