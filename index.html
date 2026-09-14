@@ -3,209 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FeasiDrop: Precision Irrigation DSS</title>
+    <title>FeasiDrop Mobile</title>
     
-    <!-- PWA Links (Required for Mobile App) -->
+    <!-- PWA Links -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#10b981">
+    <meta name="theme-color" content="#059669">
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Hide scrollbar for cleaner mobile look */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-6">
-    <div class="max-w-6xl mx-auto">
-        <header class="mb-8 border-b border-slate-800 pb-4 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-extrabold text-emerald-400">🌿 FeasiDrop: Precision Irrigation DSS</h1>
-                <p class="text-slate-400 mt-1">Live Decision Engine | Smart Stage Tracking | Offline Ready</p>
+<body class="bg-gray-100 flex justify-center h-screen overflow-hidden font-sans">
+    
+    <!-- Mobile App Container -->
+    <div class="w-full max-w-md bg-gray-50 h-full flex flex-col relative shadow-2xl overflow-hidden">
+        
+        <!-- Top App Bar -->
+        <header class="bg-emerald-600 text-white p-4 flex justify-between items-center shadow-md z-10">
+            <div class="flex items-center gap-3">
+                <!-- Premium SVG Logo -->
+                <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="100" height="100" rx="22" fill="#059669"/>
+                    <path d="M50 20 L27.5 60 A25 25 0 1 0 72.5 60 Z" fill="white"/>
+                    <path d="M50 45 Q70 50 65 80 Q45 75 50 45 Z" fill="#059669"/>
+                </svg>
+                <h1 class="text-xl font-bold tracking-wide">FeasiDrop</h1>
             </div>
-            <div class="flex gap-3">
-                <div id="sync_status" class="text-xs bg-slate-800 border border-slate-700 px-3 py-2 rounded-full text-slate-400 flex items-center">
-                    🟢 Ready
-                </div>
-            </div>
+            <button class="text-white focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
         </header>
 
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            <!-- STEP-BY-STEP INPUT FORM -->
-            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl space-y-5 xl:col-span-1">
+        <!-- Main Scrollable Content -->
+        <div id="main_content" class="flex-1 overflow-y-auto p-4 pb-24 space-y-4 no-scrollbar">
+            
+            <!-- STEP 1: SETUP CARD -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Field Setup</h2>
+                    <button onclick="fetchWeather()" id="btn_weather" class="text-xs bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded">🌤️ Fetch</button>
+                </div>
                 
-                <!-- STEP 1 & 2: GENERAL SETUP -->
-                <div class="space-y-4 border-b border-slate-700 pb-4">
-                    <div class="flex justify-between items-center">
-                        <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Step 1 & 2: General Setup</h2>
-                        <button id="btn_weather" onclick="fetchWeather()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1 px-2 rounded shadow transition">
-                            🌤️ Auto-Fetch Weather
-                        </button>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Observation Date</label>
+                        <input type="date" id="obs_date" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-300">Observation Date</label>
-                        <input type="date" id="obs_date" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300">Target Crop</label>
-                        <select id="crop" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Target Crop</label>
+                        <select id="crop" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-2.5">
                             <option value="LETTUCE">Lettuce (0.5m² plot)</option>
                             <option value="RED_RADISH">Red Radish (0.5m² plot)</option>
                             <option value="BROCCOLI">Broccoli (0.5m² plot)</option>
                         </select>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-slate-300">DAS (Days After Sowing)</label>
-                            <input type="number" id="das" value="1" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">DAS (Days)</label>
+                            <input type="number" id="das" value="1" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-300">ET0 (mm)</label>
-                            <input type="number" step="0.1" id="et0" value="1.3" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">ET0 (mm)</label>
+                            <input type="number" step="0.1" id="et0" value="1.3" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                         </div>
                     </div>
-                    
-                    <!-- DYNAMIC CROP STATUS PANEL -->
-                    <div id="crop_status_panel" class="bg-emerald-900/20 border border-emerald-800/50 p-3 rounded-lg text-sm text-emerald-200 mt-2">
-                        <div class="flex items-center gap-2 mb-1">
-                            <span class="font-bold">Plant Phenology Tracker</span>
-                        </div>
-                        <p class="text-xs text-emerald-300/80 mb-1">Effective Age: <span id="ui_eff_age" class="font-bold text-white"></span> Days <span id="ui_eff_age_label" class="text-[10px] text-emerald-400/60"></span></p>
-                        <p class="text-xs text-emerald-300/80 mb-1">Current Stage: <span id="ui_growth_stage" class="font-bold text-white uppercase"></span></p>
-                        <p class="text-xs text-emerald-300/80 mb-1">Crop Coefficient (Kc): <span id="ui_kc_val" class="font-bold text-white"></span></p>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-slate-300">Target Date Rain (mm)</label>
-                            <input type="number" step="0.1" id="rain_fcst" value="0.0" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Tgt Rain (mm)</label>
+                            <input type="number" step="0.1" id="rain_fcst" value="0.0" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-300">Yest. Rain (mm)</label>
-                            <input type="number" step="0.1" id="rain_yest" value="0.0" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Yest Rain (mm)</label>
+                            <input type="number" step="0.1" id="rain_yest" value="0.0" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                         </div>
                     </div>
                 </div>
 
-                <!-- STEP 3: TREATMENT SELECTION -->
-                <div class="space-y-3 border-b border-slate-700 pb-4">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Step 3: Select Treatment</h2>
-                    <select id="treatment_select" onchange="toggleTreatmentInputs()" class="w-full bg-slate-900 border border-emerald-500 rounded-lg p-2.5 text-emerald-300 font-bold text-sm">
-                        <option value="T1">Treatment 1: FAO-56 Mass Balance</option>
-                        <option value="T2">Treatment 2: Soil Sensor Only</option>
-                        <option value="T3">Treatment 3: Dynamic Canopy Delta</option>
-                        <option value="T4">Treatment 4: Integrated DSS Approach</option>
-                    </select>
+                <!-- DYNAMIC TRACKER -->
+                <div class="mt-4 bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                    <p class="text-[10px] uppercase font-bold text-emerald-600 mb-1">Phenology Tracker</p>
+                    <div class="flex justify-between items-center text-xs text-gray-700">
+                        <span>Age: <strong id="ui_eff_age"></strong> days</span>
+                        <span>Stage: <strong id="ui_growth_stage" class="uppercase"></strong></span>
+                        <span>Kc: <strong id="ui_kc_val"></strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: TREATMENT -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+                <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider mb-3">Algorithm Selection</h2>
+                <select id="treatment_select" onchange="toggleTreatmentInputs()" class="w-full bg-emerald-600 text-white font-bold text-sm rounded-lg focus:ring-emerald-500 focus:border-emerald-500 block p-3 shadow-sm mb-4">
+                    <option value="T1">Treatment 1: FAO-56 Standard</option>
+                    <option value="T2">Treatment 2: Soil Sensor Only</option>
+                    <option value="T3">Treatment 3: Canopy Delta</option>
+                    <option value="T4">Treatment 4: Integrated DSS</option>
+                </select>
+
+                <!-- Dynamic Parameters -->
+                <div id="params_t1" class="treatment-params">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Current T1 Depletion (mm)</label>
+                    <input type="number" step="0.1" id="prev_t1_dep" value="0.0" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                 </div>
 
-                <!-- STEP 4: DYNAMIC PARAMETERS -->
-                <div class="space-y-4">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-400">Step 4: Treatment Parameters</h2>
-                    
-                    <!-- T1 Parameters -->
-                    <div id="params_t1" class="treatment-params space-y-3">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">Current T1 Depletion (mm) <span class="text-emerald-400 font-bold ml-1">Auto-Updates per Crop</span></label>
-                            <input type="number" step="0.1" id="prev_t1_dep" value="0.0" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm shadow-[0_0_8px_rgba(16,185,129,0.3)]">
-                        </div>
-                    </div>
+                <div id="params_t2" class="treatment-params hidden">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Soil Sensor VWC</label>
+                    <input type="number" step="0.01" id="t2_vwc" value="0.38" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                </div>
 
-                    <!-- T2 Parameters -->
-                    <div id="params_t2" class="treatment-params space-y-3 hidden">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">T2 Soil Sensor VWC (Threshold: 0.40)</label>
-                            <input type="number" step="0.01" id="t2_vwc" value="0.38" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                        </div>
+                <div id="params_t3" class="treatment-params hidden space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Baseline Canopy Index</label>
+                        <input type="number" step="0.01" id="baseline_t3" value="0.55" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                     </div>
-
-                    <!-- T3 Parameters -->
-                    <div id="params_t3" class="treatment-params space-y-3 hidden">
-                        <div class="bg-slate-900/50 p-2.5 rounded border border-slate-700 text-xs text-slate-300 flex justify-between items-center">
-                            <span>📷 Evaluates canopy drop manually.</span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">MSAVI</label>
+                            <input type="number" step="0.01" id="msavi_t3" value="0.48" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-amber-400">Baseline Canopy Index (Current Stage Max)</label>
-                            <input type="number" step="0.01" id="baseline_t3" value="0.55" class="mt-1 w-full bg-slate-900 border border-amber-600 rounded-lg p-2 text-white text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">Today's RGN Camera Index (MSAVI)</label>
-                            <input type="number" step="0.01" id="msavi_t3" value="0.48" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">Today's OCN Camera Index (ONVI)</label>
-                            <input type="number" step="0.01" id="onvi_t3" value="0.49" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
-                        </div>
-                    </div>
-
-                    <!-- T4 Parameters -->
-                    <div id="params_t4" class="treatment-params space-y-3 hidden">
-                        <div class="bg-slate-900/50 p-2.5 rounded border border-slate-700 text-xs text-slate-300">
-                            ℹ️ Integrated DSS. 
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">T2 Soil Sensor VWC (Threshold: 0.40)</label>
-                            <input type="number" step="0.01" id="t2_vwc_t4" value="0.38" class="mt-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm">
-                        </div>
-                        <div class="pt-2 border-t border-slate-700">
-                            <label class="block text-xs font-medium text-amber-400">Baseline Canopy Index (Current Stage Max)</label>
-                            <input type="number" step="0.01" id="baseline_t4" value="0.55" class="mt-1 w-full bg-slate-900 border border-amber-600 rounded-lg p-2 text-white text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">Today's RGN Camera Index (MSAVI)</label>
-                            <input type="number" step="0.01" id="msavi_t4" value="0.48" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300">Today's OCN Camera Index (ONVI)</label>
-                            <input type="number" step="0.01" id="onvi_t4" value="0.49" class="mt-1 w-full bg-slate-900 border border-emerald-700 rounded-lg p-2 text-white text-sm">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">ONVI</label>
+                            <input type="number" step="0.01" id="onvi_t3" value="0.49" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
                         </div>
                     </div>
                 </div>
 
-                <button onclick="calculateSelectedTreatment()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-lg shadow-lg transition duration-200 text-sm mt-4">
-                    ✅ Run Single Calculation & Save Record
+                <div id="params_t4" class="treatment-params hidden space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Soil Sensor VWC</label>
+                        <input type="number" step="0.01" id="t2_vwc_t4" value="0.38" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                    </div>
+                    <hr class="border-gray-200">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Baseline Canopy Index</label>
+                        <input type="number" step="0.01" id="baseline_t4" value="0.55" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">MSAVI</label>
+                            <input type="number" step="0.01" id="msavi_t4" value="0.48" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">ONVI</label>
+                            <input type="number" step="0.01" id="onvi_t4" value="0.49" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTION BUTTON -->
+            <button onclick="calculateSelectedTreatment()" class="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 px-4 rounded-xl shadow-lg transition duration-200 text-lg">
+                Run Decision Engine
+            </button>
+
+            <!-- ALERT / OUTPUT CARD (Hidden by default) -->
+            <div id="results_card" class="hidden">
+                <!-- Content injected via JS -->
+            </div>
+
+            <!-- DATA LOG TABLE -->
+            <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Device Log</h2>
+                    <button onclick="clearData()" class="text-[10px] text-red-500 border border-red-200 px-2 py-1 rounded">Clear</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-gray-600">
+                        <thead class="bg-gray-50 text-gray-500 uppercase">
+                            <tr>
+                                <th class="p-2 whitespace-nowrap">Date</th>
+                                <th class="p-2">Crop</th>
+                                <th class="p-2 whitespace-nowrap">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log_tbody" class="divide-y divide-gray-100"></tbody>
+                    </table>
+                </div>
+                <button onclick="downloadCSV()" class="w-full mt-3 bg-gray-100 text-gray-700 text-xs font-bold py-2 px-3 rounded shadow-sm border border-gray-200">
+                    📥 Export Dataset (CSV)
                 </button>
             </div>
-
-            <!-- OUTPUT RESULTS & LOGS -->
-            <div class="xl:col-span-2 space-y-6">
-                <div id="results_card" class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl hidden">
-                    <h2 class="text-xl font-bold text-emerald-300 border-b border-slate-700 pb-2 mb-4">📝 Active Treatment Output</h2>
-                    <div id="output_content" class="space-y-4 text-slate-200 text-sm"></div>
-                </div>
-
-                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-700 pb-2 gap-4">
-                        <h2 class="text-xl font-bold text-emerald-300">🗄️ Experiment Database Log</h2>
-                        <button onclick="downloadCSV()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-2 px-3 rounded shadow transition flex-shrink-0">
-                            📥 Download FULL Dataset (CSV)
-                        </button>
-                    </div>
-                    <p class="text-xs text-slate-400 mb-3">Showing live summary view.</p>
-                    <div class="overflow-x-auto max-h-96">
-                        <table id="log_table" class="w-full text-left text-xs text-slate-300">
-                            <thead class="bg-slate-900 text-slate-400 uppercase sticky top-0">
-                                <tr>
-                                    <th class="p-2 whitespace-nowrap">Date</th>
-                                    <th class="p-2">Crop</th>
-                                    <th class="p-2">Stage</th>
-                                    <th class="p-2">Treat</th>
-                                    <th class="p-2">Input Check</th>
-                                    <th class="p-2 whitespace-nowrap">Result</th>
-                                    <th class="p-2">Reason Log</th>
-                                </tr>
-                            </thead>
-                            <tbody id="log_tbody" class="divide-y divide-slate-700"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="absolute bottom-0 w-full bg-white border-t border-gray-200 flex justify-around p-3 pb-5 z-20">
+            <button class="flex flex-col items-center text-emerald-600">
+                <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                <span class="text-[10px] font-bold">Home</span>
+            </button>
+            <button class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <span class="text-[10px] font-medium">Logs</span>
+            </button>
+            <button class="flex flex-col items-center text-gray-400 hover:text-emerald-600">
+                <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span class="text-[10px] font-medium">Settings</span>
+            </button>
+        </nav>
     </div>
 
     <script>
-        const WEB_APP_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+        // === LOCAL STORAGE INTEGRATION (PREVENTS DATA LOSS ON REFRESH) ===
         let logData = [];
         let t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
 
-        // Cleared historical databases for fresh live application
-        const SENSOR_DATABASE = {};
-        const SOIL_VWC_DATABASE = {};
+        try {
+            const savedLogs = localStorage.getItem('feasiDropLogs');
+            const savedDeps = localStorage.getItem('feasiDropDepletions');
+            if (savedLogs) logData = JSON.parse(savedLogs);
+            if (savedDeps) t1Depletions = JSON.parse(savedDeps);
+        } catch (e) { console.error("Error loading local storage."); }
 
         document.getElementById('obs_date').valueAsDate = new Date();
 
@@ -215,18 +226,12 @@
             BROCCOLI: { zr_min: 0.10, zr_max: 0.35, d_start: 7, d_max: 40, p: 0.08, kc_init: 0.70, kc_mid: 1.05, kc_end: 0.95, s_init: 25, s_dev: 20, s_mid: 15, s_late: 10, m_min: 0.05, m_max: 0.85, vkc_min: 0.70, vkc_max: 1.05 }
         };
 
-        function getDynamicBaseline(obsDateStr, cropKey, currentStage) {
-            return 0.55; // Default fallback for live app
-        }
-
         document.getElementById('crop').addEventListener('change', function() {
             document.getElementById('prev_t1_dep').value = t1Depletions[this.value].toFixed(2);
             updateCropStatus();
         });
         
-        document.getElementById('obs_date').addEventListener('change', function() {
-            updateCropStatus();
-        });
+        document.getElementById('obs_date').addEventListener('change', updateCropStatus);
         document.getElementById('das').addEventListener('input', updateCropStatus);
 
         function updateCropStatus() {
@@ -235,23 +240,20 @@
             const effAge = (cropKey === 'RED_RADISH') ? das : das + 16;
             
             const kc = getKc(CROP_CONFIG[cropKey], effAge);
-            let stage = "Live Tracking Active";
-            let kc_display = kc.toFixed(2);
-
             document.getElementById('ui_eff_age').innerText = effAge;
-            document.getElementById('ui_eff_age_label').innerText = (cropKey === 'RED_RADISH') ? " (Nursery Grown)" : " (Includes 16-day transplant age)";
-            document.getElementById('ui_growth_stage').innerText = stage;
-            document.getElementById('ui_kc_val').innerText = kc_display;
+            document.getElementById('ui_growth_stage').innerText = "Active";
+            document.getElementById('ui_kc_val').innerText = kc.toFixed(2);
+            
+            // Sync UI with local memory
+            document.getElementById('prev_t1_dep').value = t1Depletions[cropKey].toFixed(2);
         }
-
-        updateCropStatus();
 
         async function fetchWeather() {
             const btn = document.getElementById('btn_weather');
-            btn.innerHTML = '⏳ Fetching...';
+            btn.innerHTML = '⏳...';
             try {
                 const obsDateStr = document.getElementById('obs_date').value;
-                if (!obsDateStr) { alert("Select Observation Date first."); btn.innerHTML = '🌤️ Auto-Fetch Weather'; return; }
+                if (!obsDateStr) return;
                 const obsDateObj = new Date(obsDateStr);
                 const start_date = new Date(obsDateObj.getTime() - 86400000).toISOString().split('T')[0];
                 
@@ -263,12 +265,12 @@
                     document.getElementById('rain_yest').value = data.daily.precipitation_sum[0] || 0;
                     document.getElementById('rain_fcst').value = data.daily.precipitation_sum[1] || 0;
                     document.getElementById('et0').value = data.daily.et0_fao_evapotranspiration[1] || 0;
-                    btn.innerHTML = '✅ Synced!';
-                } else { btn.innerHTML = '❌ No Data'; }
-                setTimeout(() => { btn.innerHTML = '🌤️ Auto-Fetch Weather'; }, 3000);
+                    btn.innerHTML = '✅ OK';
+                }
+                setTimeout(() => { btn.innerHTML = '🌤️ Fetch'; }, 2000);
             } catch (err) {
-                btn.innerHTML = '❌ Failed';
-                setTimeout(() => { btn.innerHTML = '🌤️ Auto-Fetch Weather'; }, 3000);
+                btn.innerHTML = '❌ Err';
+                setTimeout(() => { btn.innerHTML = '🌤️ Fetch'; }, 2000);
             }
         }
 
@@ -291,6 +293,17 @@
             return cfg.kc_mid + ((das - (cfg.s_init + cfg.s_dev + cfg.s_mid)) / cfg.s_late) * (cfg.kc_end - cfg.kc_mid);
         }
 
+        function clearData() {
+            if(confirm("Are you sure you want to clear all saved logs and calculations?")) {
+                logData = [];
+                t1Depletions = { LETTUCE: 0.00, RED_RADISH: 0.00, BROCCOLI: 0.00 };
+                localStorage.removeItem('feasiDropLogs');
+                localStorage.removeItem('feasiDropDepletions');
+                updateTable();
+                updateCropStatus();
+            }
+        }
+
         async function calculateSelectedTreatment() {
             const obsDate = document.getElementById('obs_date').value;
             const cropKey = document.getElementById('crop').value;
@@ -301,34 +314,49 @@
             const treatment = document.getElementById('treatment_select').value;
 
             const record = generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment);
+            
+            // Save to LocalStorage immediately
+            logData.push(record);
+            localStorage.setItem('feasiDropLogs', JSON.stringify(logData));
+            localStorage.setItem('feasiDropDepletions', JSON.stringify(t1Depletions));
 
-            document.getElementById('results_card').classList.remove('hidden');
-            document.getElementById('output_content').innerHTML = `
-                <div class="bg-slate-900 p-4 rounded border border-slate-700">
-                    <span class="text-emerald-400 font-bold">${record.treatment}</span><br>
-                    <p class="text-slate-300 mt-1">Crop: ${record.crop} | Stage: ${record.growth_stage} | Root Depth: ${record.root_depth}m</p>
-                    <div class="mt-3 text-lg font-extrabold text-white">
-                        💧 Result: ${record.result_mm} mm &nbsp;|&nbsp; ${record.result_L} L/plot
-                    </div>
-                    <p class="text-xs text-slate-400 mt-2 leading-relaxed"><strong>Decision Log:</strong> ${record.reason}</p>
-                </div>
-            `;
-
-            if (!WEB_APP_URL.includes("PASTE_YOUR")) {
-                const statusEl = document.getElementById('sync_status');
-                statusEl.innerText = "⏳ Syncing to Cloud...";
-                const payload = { ...record, entry_time: new Date().toISOString().replace('T', ' ').substring(0, 19) };
-                fetch(WEB_APP_URL, {
-                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                }).then(() => {
-                    statusEl.innerText = "✅ Synced to Sheet!";
-                    statusEl.className = "text-xs bg-emerald-900/50 border border-emerald-700 px-3 py-2 rounded-full text-emerald-300 flex items-center";
-                });
+            const resCard = document.getElementById('results_card');
+            resCard.classList.remove('hidden');
+            
+            // Dynamic Alert UI matching the mockups
+            let alertUI = "";
+            if (parseFloat(record.result_mm) > 0) {
+                alertUI = `
+                    <div class="bg-red-50 border-2 border-red-500 rounded-xl p-5 text-center shadow-sm">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-3">
+                            <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <h3 class="text-lg leading-6 font-bold text-red-700 uppercase tracking-widest mb-1">Action Required</h3>
+                        <p class="text-sm text-red-600 font-medium mb-4">Water Deficit Detected</p>
+                        <div class="bg-white rounded-lg p-3 border border-red-200">
+                            <p class="text-2xl font-black text-gray-900">${record.result_mm} mm</p>
+                            <p class="text-xs text-gray-500">Apply to ${record.crop} before tomorrow.</p>
+                        </div>
+                    </div>`;
+            } else {
+                alertUI = `
+                    <div class="bg-emerald-50 border-2 border-emerald-500 rounded-xl p-5 text-center shadow-sm">
+                        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 mb-3">
+                            <svg class="h-8 w-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h3 class="text-lg leading-6 font-bold text-emerald-700 uppercase tracking-widest mb-1">Safe</h3>
+                        <p class="text-sm text-emerald-600 font-medium mb-4">No Irrigation Needed</p>
+                        <div class="bg-white rounded-lg p-3 border border-emerald-200">
+                            <p class="text-xs text-gray-600">Conditions are stable. Check back tomorrow.</p>
+                        </div>
+                    </div>`;
             }
 
-            logData.push(record);
+            resCard.innerHTML = alertUI;
             updateTable();
+            
+            // Scroll to results
+            document.getElementById('main_content').scrollTo({ top: document.getElementById('main_content').scrollHeight, behavior: 'smooth' });
         }
 
         function generateDecisionRecord(obsDate, cropKey, das, et0, rainFcst, rainYest, treatment) {
@@ -337,7 +365,6 @@
             const rd = getRootDepth(cfg, effAge);
             
             let kc = getKc(cfg, effAge); 
-            let currentStage = "Live Tracking Active";
             
             const fc = 0.45, wp = 0.18, vwcThreshold = 0.40, area = 0.5;
             const deltaThreshold = 0.05; 
@@ -345,23 +372,22 @@
             const rawMm = cfg.p * tawMm;
 
             let targetMm = 0; let reason = "";
-            let log_vwc = "N/A", log_baseline = "N/A", log_msavi = "N/A", log_onvi = "N/A", log_fused = "N/A", log_prev_dep = "N/A", inputCheck = "";
+            let inputCheck = "";
 
             if (treatment === 'T1') {
-                log_prev_dep = t1Depletions[cropKey]; 
+                let log_prev_dep = parseFloat(document.getElementById('prev_t1_dep').value) || t1Depletions[cropKey]; 
                 let preT1 = Math.max(0, Math.min(log_prev_dep + (kc * et0) - rainYest, tawMm));
-                inputCheck = `Dep: ${preT1.toFixed(2)}`;
                 
                 let nextT1Dep = 0;
                 if (rainFcst > 2.0) {
-                    reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                    reason = `Target rain > 2mm.`;
                     nextT1Dep = preT1;
                 } else if (preT1 > rawMm) {
                     targetMm = preT1;
-                    reason = `Triggered: Depletion (${preT1.toFixed(2)}mm) > RAW (${rawMm.toFixed(2)}mm).`;
+                    reason = `Depletion > RAW.`;
                     nextT1Dep = 0.00; 
                 } else {
-                    reason = `Skipped: Depletion (${preT1.toFixed(2)}mm) safe (RAW: ${rawMm.toFixed(2)}mm).`;
+                    reason = `Depletion Safe.`;
                     nextT1Dep = preT1;
                 }
 
@@ -371,136 +397,96 @@
                 }
             } 
             else if (treatment === 'T2') {
-                log_vwc = parseFloat(document.getElementById('t2_vwc').value) || 0.38;
-                inputCheck = `VWC: ${log_vwc}`;
-                
-                let maxT2Dose = 5.0; 
+                let log_vwc = parseFloat(document.getElementById('t2_vwc').value) || 0.38;
                 let requiredRefill = Math.max(1000 * (fc - log_vwc) * rd, 0.0);
-                let actualRefill = Math.min(requiredRefill, maxT2Dose);
                 
-                if (rainFcst > 2.0) { reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                if (rainFcst > 2.0) { reason = `Target rain > 2mm.`;
                 } else if (log_vwc < vwcThreshold) {
-                    targetMm = Math.max(actualRefill - rainFcst, 0.0);
-                    reason = `Triggered: VWC (${log_vwc}) < threshold (${vwcThreshold}). Applied capped micro-dose.`;
-                } else { reason = `Skipped: VWC is safe (${log_vwc} >= ${vwcThreshold}).`; }
+                    targetMm = Math.max(Math.min(requiredRefill, 5.0) - rainFcst, 0.0);
+                    reason = `VWC < threshold.`;
+                } else { reason = `VWC is safe.`; }
             } 
             else if (treatment === 'T3') {
-                log_baseline = parseFloat(document.getElementById('baseline_t3').value) || 0.55;
-                log_msavi = parseFloat(document.getElementById('msavi_t3').value) || 0.48;
-                log_onvi = parseFloat(document.getElementById('onvi_t3').value) || 0.49;
+                let log_baseline = parseFloat(document.getElementById('baseline_t3').value) || 0.55;
+                let log_msavi = parseFloat(document.getElementById('msavi_t3').value) || 0.48;
+                let log_onvi = parseFloat(document.getElementById('onvi_t3').value) || 0.49;
                 
                 const fusedIndex = (log_msavi + log_onvi) / 2.0;
-                log_fused = fusedIndex.toFixed(3);
-                inputCheck = `Base: ${log_baseline.toFixed(3)} | Idx: ${log_fused}`;
                 const indexDrop = log_baseline - fusedIndex;
-                
-                let divisor = (cfg.m_max - cfg.m_min) || 0.0001;
                 let clampedM = Math.max(cfg.m_min, Math.min(fusedIndex, cfg.m_max));
-                let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / divisor) * (cfg.vkc_max - cfg.vkc_min);
+                let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / (cfg.m_max - cfg.m_min)) * (cfg.vkc_max - cfg.vkc_min);
 
-                if (rainFcst > 2.0) { reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                if (rainFcst > 2.0) { reason = `Target rain > 2mm.`;
                 } else if (indexDrop >= deltaThreshold) {
                     targetMm = Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0);
-                    reason = `Triggered: Index dropped by ${indexDrop.toFixed(2)}. Applied 1.5x ET₀ Recovery Dose.`;
-                } else { reason = `Skipped: Canopy is stable. Drop (${indexDrop.toFixed(2)}) is less than 0.05 limit.`; }
+                    reason = `Index dropped > 0.05.`;
+                } else { reason = `Canopy is stable.`; }
             } 
             else if (treatment === 'T4') {
-                log_vwc = parseFloat(document.getElementById('t2_vwc_t4').value) || 0.38;
-                log_baseline = parseFloat(document.getElementById('baseline_t4').value) || 0.55;
-                log_msavi = parseFloat(document.getElementById('msavi_t4').value) || 0.48;
-                log_onvi = parseFloat(document.getElementById('onvi_t4').value) || 0.49;
+                let log_vwc = parseFloat(document.getElementById('t2_vwc_t4').value) || 0.38;
+                let log_baseline = parseFloat(document.getElementById('baseline_t4').value) || 0.55;
+                let log_msavi = parseFloat(document.getElementById('msavi_t4').value) || 0.48;
+                let log_onvi = parseFloat(document.getElementById('onvi_t4').value) || 0.49;
                 
                 const fusedIndex = (log_msavi + log_onvi) / 2.0;
-                log_fused = fusedIndex.toFixed(3);
-                inputCheck = `VWC: ${log_vwc} | Idx: ${log_fused}`;
                 const indexDrop = log_baseline - fusedIndex;
-                
-                let divisor = (cfg.m_max - cfg.m_min) || 0.0001;
                 let clampedM = Math.max(cfg.m_min, Math.min(fusedIndex, cfg.m_max));
-                let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / divisor) * (cfg.vkc_max - cfg.vkc_min);
+                let vegKc = cfg.vkc_min + ((clampedM - cfg.m_min) / (cfg.m_max - cfg.m_min)) * (cfg.vkc_max - cfg.vkc_min);
 
                 let soilTriggered = (log_vwc < vwcThreshold);
                 let canopyTriggered = (indexDrop >= deltaThreshold);
 
-                if (rainFcst > 2.0) {
-                    reason = `Skipped: Target day rain (${rainFcst}mm) > 2mm.`;
+                if (rainFcst > 2.0) { reason = `Target rain > 2mm.`;
                 } else if (soilTriggered || canopyTriggered) {
-                    let refillT2 = 0; let refillT3 = 0;
-                    if (soilTriggered) { 
-                        let req = Math.max(1000 * (fc - log_vwc) * rd, 0.0);
-                        refillT2 = Math.max(Math.min(req, 5.0) - rainFcst, 0.0); 
-                    }
-                    if (canopyTriggered) { refillT3 = Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0); }
+                    let refillT2 = soilTriggered ? Math.max(Math.min(Math.max(1000 * (fc - log_vwc) * rd, 0.0), 5.0) - rainFcst, 0.0) : 0;
+                    let refillT3 = canopyTriggered ? Math.max(((vegKc * et0) * 1.5) - rainFcst, 0.0) : 0;
                     
-                    if (soilTriggered && canopyTriggered) {
-                        targetMm = (refillT2 + refillT3) / 2.0;
-                        reason = `Triggered: Soil AND Canopy Drop crossed limits. Applied averaged recovery dose.`;
-                    } else if (soilTriggered) {
-                        targetMm = refillT2;
-                        reason = `Triggered: Only Soil VWC (${log_vwc} < ${vwcThreshold}) crossed limit.`;
-                    } else if (canopyTriggered) {
-                        targetMm = refillT3;
-                        reason = `Triggered: Only Canopy Anomaly detected. Soil is safe.`;
-                    }
-                } else { reason = `Skipped: Both Soil and Canopy Drop are stable.`; }
+                    if (soilTriggered && canopyTriggered) { targetMm = (refillT2 + refillT3) / 2.0; reason = "Soil & Canopy Trigger"; } 
+                    else if (soilTriggered) { targetMm = refillT2; reason = "Soil Trigger"; } 
+                    else if (canopyTriggered) { targetMm = refillT3; reason = "Canopy Trigger"; }
+                } else { reason = `Safe parameters.`; }
             }
 
-            let plotL = targetMm > 0 ? (targetMm * area).toFixed(2) : "0.00";
-
             return {
-                date: obsDate, crop: cropKey, das: das, eff_age: effAge, growth_stage: currentStage,
-                treatment: treatment, et0: et0, rain_fcst: rainFcst, rain_yest: rainYest,
-                root_depth: rd.toFixed(2), taw: tawMm.toFixed(2), raw: rawMm.toFixed(2),
-                prev_dep: log_prev_dep, vwc: log_vwc, baseline: log_baseline, msavi: log_msavi,
-                onvi: log_onvi, fused_index: log_fused, result_mm: targetMm.toFixed(2),
-                result_L: plotL, reason: reason, inputCheck: inputCheck 
+                date: obsDate, crop: cropKey, treatment: treatment,
+                result_mm: targetMm.toFixed(2), reason: reason
             };
         }
 
         function updateTable() {
             let tbody = document.getElementById('log_tbody');
             tbody.innerHTML = '';
-            let displayData = logData.slice(-20).reverse();
+            let displayData = logData.slice(-10).reverse();
             displayData.forEach(row => {
-                let shortStage = row.growth_stage.split(' ')[0]; 
+                let badgeColor = parseFloat(row.result_mm) > 0 ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800';
                 tbody.innerHTML += `
-                    <tr class="hover:bg-slate-700 border-b border-slate-700/50">
+                    <tr class="border-b border-gray-100">
                         <td class="p-2 whitespace-nowrap">${row.date}</td>
-                        <td class="p-2">${row.crop}</td>
-                        <td class="p-2 truncate max-w-[80px]" title="${row.growth_stage}">${shortStage}</td>
-                        <td class="p-2 font-bold text-emerald-400">${row.treatment}</td>
-                        <td class="p-2 text-[10px] text-slate-400 font-mono whitespace-nowrap">${row.inputCheck}</td>
-                        <td class="p-2 whitespace-nowrap text-white font-bold">${row.result_mm} mm</td>
-                        <td class="p-2 text-xs text-slate-400 max-w-[150px] truncate" title="${row.reason}">${row.reason}</td>
+                        <td class="p-2 font-medium">${row.crop}</td>
+                        <td class="p-2 whitespace-nowrap"><span class="px-2 py-1 rounded text-[10px] font-bold ${badgeColor}">${row.result_mm} mm</span></td>
                     </tr>
                 `;
             });
         }
 
         function downloadCSV() {
-            let csv = "Date,Crop,DAS,Effective_Age_Days,Growth_Stage,Treatment,ET0_mm,Rain_Fcst_mm,Rain_Yest_mm,Root_Depth_m,TAW_mm,RAW_mm,T1_Prev_Dep_mm,T2_T4_Soil_VWC,T3_T4_Baseline_Index,MSAVI,ONVI,Fused_Index,Result_mm,Plot_Liters,Reason\n";
-            logData.forEach(r => {
-                let safeReason = r.reason.replace(/"/g, '""'); 
-                csv += `${r.date},${r.crop},${r.das},${r.eff_age},"${r.growth_stage}",${r.treatment},${r.et0},${r.rain_fcst},${r.rain_yest},${r.root_depth},${r.taw},${r.raw},${r.prev_dep},${r.vwc},${r.baseline},${r.msavi},${r.onvi},${r.fused_index},${r.result_mm},${r.result_L},"${safeReason}"\n`;
-            });
+            if(logData.length === 0) { alert("No data to download."); return; }
+            let csv = "Date,Crop,Treatment,Result_mm,Reason\n";
+            logData.forEach(r => { csv += `${r.date},${r.crop},${r.treatment},${r.result_mm},"${r.reason}"\n`; });
             let blob = new Blob([csv], { type: 'text/csv' });
             let url = window.URL.createObjectURL(blob);
             let a = document.createElement('a');
             a.setAttribute('href', url);
-            a.setAttribute('download', 'FeasiDrop_Comprehensive_Log.csv');
+            a.setAttribute('download', 'FeasiDrop_Mobile_Log.csv');
             a.click();
         }
 
+        // Run table generation on initial load to pull from LocalStorage
+        updateTable();
+        updateCropStatus();
+
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                })
-                .catch(err => {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
+            window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
         }
     </script>
 </body>
